@@ -750,15 +750,6 @@ clk2 = Abc_Clock();
         if ( f0Proved && status == 1 )
             Gia_ManPatchCoDriver( pAig, i, 0 );
 
-/*
-        if ( status == -1 )
-        {
-            Gia_Man_t * pTemp = Gia_ManDupDfsCone( pAig, pObj );
-            Gia_AigerWrite( pTemp, "gia_hard.aig", 0, 0, 0 );
-            Gia_ManStop( pTemp );
-            Abc_Print( 1, "Dumping hard cone into file \"%s\".\n", "gia_hard.aig" );
-        }
-*/
         if ( status != 0 )
             continue;
         // save the pattern

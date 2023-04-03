@@ -75,6 +75,7 @@ ifndef ABC_USE_NO_CUDD
   $(info $(MSG_PREFIX)Compiling with CUDD)
 endif
 
+# ABC_READLINE_INCLUDES = /data/ssd/ysun/support/package/usr/include
 ABC_READLINE_INCLUDES ?=
 ABC_READLINE_LIBRARIES ?= -lreadline
 
@@ -85,7 +86,9 @@ ifndef ABC_USE_NO_READLINE
   ifeq ($(OS), FreeBSD)
     CFLAGS += -I/usr/local/include
     LDFLAGS += -L/usr/local/lib
-  endif
+    # CFLAGS += -I/data/ssd/ysun/support/package/usr/include
+    # LDFLAGS += -L/data/ssd/ysun/support/package/usr/lib
+ endif
   $(info $(MSG_PREFIX)Using libreadline)
 endif
 

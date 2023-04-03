@@ -343,6 +343,10 @@ void Cec_ManSimulation( Gia_Man_t * pAig, Cec_ParSim_t * pPars )
 ***********************************************************************/
 Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSilent )
 {
+    // for testing **
+    if ( pPars->fVerbose )
+        Abc_Print( 1, "Enter cecCore.c/Cec_ManSatSweeping()\n" );
+
     int fOutputResult = 0;
     Cec_ParSat_t ParsSat, * pParsSat = &ParsSat;
     Cec_ParSim_t ParsSim, * pParsSim = &ParsSim;
@@ -410,8 +414,7 @@ p->timeSim += Abc_Clock() - clk;
     {
         clk2 = Abc_Clock();
         nMatches = 0;
-        if ( pPars->fDualOut )
-        {
+        if ( pPars->fDualOut ){
             nMatches = Gia_ManEquivSetColors( p->pAig, pPars->fVeryVerbose );
 //            p->pAig->pIso = Cec_ManDetectIsomorphism( p->pAig );
 //            Gia_ManEquivTransform( p->pAig, 1 );
@@ -422,8 +425,8 @@ p->timeSim += Abc_Clock() - clk;
 
         if ( pPars->fVeryVerbose )
             Gia_ManPrintStats( pSrm, NULL );
-        if ( Gia_ManCoNum(pSrm) == 0 )
-        {
+        // Considered all available candidate equivalences
+        if ( Gia_ManCoNum(pSrm) == 0 ){
             Gia_ManStop( pSrm );
             if ( p->pPars->fVerbose )
                 Abc_Print( 1, "Considered all available candidate equivalences.\n" );
@@ -446,11 +449,13 @@ p->timeSim += Abc_Clock() - clk;
             break;
         }
 clk = Abc_Clock();
+        // call csat or sat
         if ( pPars->fRunCSat )
             Cec_ManSatSolveCSat( pPat, pSrm, pParsSat ); 
         else
             Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
 p->timeSat += Abc_Clock() - clk;
+        // Updates equivalence classes using the patterns
         if ( Cec_ManFraClassesUpdate( p, pSim, pPat, pSrm ) )
         {
             Gia_ManStop( pSrm );
@@ -474,21 +479,18 @@ p->timeSat += Abc_Clock() - clk;
                 i, p->nAllProved, p->nAllDisproved, p->nAllFailed, nMatches, Gia_ManAndNum(p->pAig) );
             Abc_PrintTime( 1, "Time", Abc_Clock() - clk2 );
         }
-        if ( Gia_ManAndNum(p->pAig) == 0 )
-        {
+        if ( Gia_ManAndNum(p->pAig) == 0 ){
             if ( p->pPars->fVerbose )
                 Abc_Print( 1, "Network after reduction is empty.\n" );
             break;
         }
         // check resource limits
-        if ( p->pPars->TimeLimit && (Abc_Clock() - clkTotal)/CLOCKS_PER_SEC >= p->pPars->TimeLimit )
-        {
+        if ( p->pPars->TimeLimit && (Abc_Clock() - clkTotal)/CLOCKS_PER_SEC >= p->pPars->TimeLimit ){
             fTimeOut = 1;
             break;
         }
 //        if ( p->nAllFailed && !p->nAllProved && !p->nAllDisproved )
-        if ( p->nAllFailed > p->nAllProved + p->nAllDisproved )
-        {
+        if ( p->nAllFailed > p->nAllProved + p->nAllDisproved ){
             if ( pParsSat->nBTLimit >= 10001 )
                 break;
             if ( pPars->fSatSweeping )
@@ -509,21 +511,19 @@ p->timeSat += Abc_Clock() - clk;
                 }
             }
         }
-        if ( pPars->fDualOut && pPars->fColorDiff && (Gia_ManAndNum(p->pAig) < 100000 || p->nAllProved + p->nAllDisproved < 10) )
-        {
+        if ( pPars->fDualOut && pPars->fColorDiff && (Gia_ManAndNum(p->pAig) < 100000 || p->nAllProved + p->nAllDisproved < 10) ){
             if ( p->pPars->fVerbose )
                 Abc_Print( 1, "Switching into reduced mode.\n" );
             pPars->fColorDiff = 0;
         }
-//        if ( pPars->fDualOut && Gia_ManAndNum(p->pAig) < 20000 )
-        else if ( pPars->fDualOut && (Gia_ManAndNum(p->pAig) < 20000 || p->nAllProved + p->nAllDisproved < 10) )
-        {
+        // if ( pPars->fDualOut && Gia_ManAndNum(p->pAig) < 20000 )
+        else if ( pPars->fDualOut && (Gia_ManAndNum(p->pAig) < 20000 || p->nAllProved + p->nAllDisproved < 10) ){
             if ( p->pPars->fVerbose )
                 Abc_Print( 1, "Switching into normal mode.\n" );
             pPars->fColorDiff = 0;
             pPars->fDualOut = 0;
         }
-    }
+    }   // for ( i = 1; i <= pPars->nItersMax; i++ )
 finalize:
     if ( pPars->fVerbose )
         printf( "Performed %d SAT calls: P = %d  D = %d  F = %d\n", 

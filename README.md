@@ -8,6 +8,8 @@ ABC is always changing but the current snapshot is believed to be stable.
 
 ## Compiling:
 
+make ABC_USE_NO_READLINE=1 -j20
+
 To compile ABC as a binary, download and unzip the code, then type `make`.
 To compile ABC as a static library, type `make libabc.a`.
 
@@ -39,6 +41,13 @@ The same can be produced by running the binary in the command-line mode:
     i10          : i/o =  257/  224  lat =    0  and =   2396  lev = 37
     i10          : i/o =  257/  224  lat =    0  and =   1851  lev = 35
     Networks are equivalent.
+
+    Or can try:
+    &r i10.aig ; &fraig ; &ps
+    r: read
+    b: balance
+    ps: print_stats
+    rw: rewrite
 
 or in the batch mode:
 

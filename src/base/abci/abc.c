@@ -16744,6 +16744,9 @@ int Abc_CommandMinisimp( Abc_Frame_t * pAbc, int argc, char ** argv )
 ***********************************************************************/
 int Abc_CommandFraig( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
+    // for testing **
+    Abc_Print( 1, "Enter abc.c/Abc_CommandFraig()\n" );
+
     char Buffer[100];
     Fraig_Params_t Params, * pParams = &Params;
     Abc_Ntk_t * pNtk, * pNtkRes;
@@ -37468,6 +37471,10 @@ usage:
 ***********************************************************************/
 int Abc_CommandAbc9Fraig( Abc_Frame_t * pAbc, int argc, char ** argv )
 {
+    // for testing **
+    Abc_Print( 1, "Enter abc.c/Abc_CommandAbc9Fraig()\n" );
+
+
     extern void Cec4_ManSetParams( Cec_ParFra_t * pPars );
     extern Gia_Man_t * Cec2_ManSimulateTest( Gia_Man_t * p, Cec_ParFra_t * pPars );
     extern Gia_Man_t * Cec3_ManSimulateTest( Gia_Man_t * p, Cec_ParFra_t * pPars );
