@@ -378,6 +378,8 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
 
     // prepare the managers
     // SAT sweeping
+    // p: Cec_ManFra_t, create an AIG
+    // pAig is the original AIG, p->pAig is the reduced
     p = Cec_ManFraStart( pIni, pPars );
     if ( pPars->fDualOut )
         pPars->fColorDiff = 1;
@@ -393,7 +395,8 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
     Cec_ManSatSetDefaultParams( pParsSat );
     pParsSat->nBTLimit = pPars->nBTLimit;
     pParsSat->fVerbose = pPars->fVeryVerbose;
-    // simulation patterns
+    // init simulation patterns
+    // pPat: Cec_ManPat_t
     pPat = Cec_ManPatStart();
     //pPat->fVerbose = pPars->fVeryVerbose;
 

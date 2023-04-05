@@ -469,6 +469,9 @@ int Cec_SetActivityFactors( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 ***********************************************************************/
 int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 {
+    // for testing **
+    // Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatCheckNode()\n" );
+
     Gia_Obj_t * pObjR = Gia_Regular(pObj);
     int nBTLimit = p->pPars->nBTLimit;
     int Lit, RetValue, status, nConflicts;
@@ -496,7 +499,7 @@ int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 clk2 = Abc_Clock();
     Cec_CnfNodeAddToSolver( p, pObjR );
 //ABC_PRT( "cnf", Abc_Clock() - clk2 );
-//Abc_Print( 1, "%d \n", p->pSat->size );
+// Abc_Print( 1, "%d \n", p->pSat->size );
 
 clk2 = Abc_Clock();
 //    Cec_SetActivityFactors( p, pObjR ); 
@@ -518,6 +521,7 @@ clk2 = Abc_Clock();
         if ( pObjR->fPhase )  Lit = lit_neg( Lit );
     }
 //Sat_SolverWriteDimacs( p->pSat, "temp.cnf", pLits, pLits + 2, 1 );
+// Sat_SolverWriteDimacs( p->pSat, "temp.cnf", &Lit, &Lit + 2, 1 );
 clk = Abc_Clock();
     nConflicts = p->pSat->stats.conflicts;
 

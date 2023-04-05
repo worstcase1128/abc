@@ -44,6 +44,7 @@ The same can be produced by running the binary in the command-line mode:
 
     Or can try:
     &r i10.aig ; &fraig ; &ps
+    div.aig  
     r: read
     b: balance
     ps: print_stats
