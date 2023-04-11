@@ -747,6 +747,7 @@ clk2 = Abc_Clock();
             int OrigId2 = Vec_IntEntry(vIdsOrig, iObj2);
             assert( OrigId1 >= 0 && OrigId2 >= 0 );
             Vec_IntPushTwo( vEquivPairs, OrigId1, OrigId2 );
+            // printf("pushing %d and %d into vEquivPairs\n", OrigId1, OrigId2);
         }
         if ( pPars->fSaveCexes && status != -1 )
             Vec_PtrWriteEntry( pAig->vSeqModelVec, i, status ? (Abc_Cex_t *)(ABC_PTRINT_T)1 : Cex_ManGenCex(p, i) );

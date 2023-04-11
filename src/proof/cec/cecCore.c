@@ -452,6 +452,10 @@ p->timeSim += Abc_Clock() - clk;
             break;
         }
 clk = Abc_Clock();
+
+        // for testing
+        // printf("before sat, size of vIdsEquiv: %d\n", Vec_IntSize(p->pAig->vIdsEquiv));
+
         // call csat or sat
         if ( pPars->fRunCSat )
             Cec_ManSatSolveCSat( pPat, pSrm, pParsSat ); 
@@ -467,6 +471,9 @@ p->timeSat += Abc_Clock() - clk;
             goto finalize;
         }
         Gia_ManStop( pSrm );
+
+        // for testing
+        printf("after sat, size of vIdsEquiv: %d\n", Vec_IntSize(p->pAig->vIdsEquiv));
 
         // update the manager
         pSim->pAig = p->pAig = Gia_ManEquivReduceAndRemap( pTemp = p->pAig, 0, pParsSim->fDualOut );

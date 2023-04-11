@@ -1944,7 +1944,7 @@ int sat_solver_solve_internal(sat_solver* s)
     veci_resize(&s->unit_lits, 0);
     s->nCalls++;
     // for testing **
-    s->verbosity = 1;
+    // s->verbosity = 1;
 
     if (s->verbosity >= 1){
         printf("==================================[MINISAT]===================================\n");
@@ -2068,7 +2068,7 @@ void sat_solver_set_resource_limits(sat_solver* s, ABC_INT64_T nConfLimit, ABC_I
 int sat_solver_solve(sat_solver* s, lit* begin, lit* end, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimit, ABC_INT64_T nConfLimitGlobal, ABC_INT64_T nInsLimitGlobal)
 {
     // for testing **
-    // Abc_Print( 1, "Enter satSolver.c/sat_solver_solve()\n" );
+    // Abc_Print( 1, "Enter bsat/satSolver.c/sat_solver_solve()\n" );
     lbool status;
     lit * i;
     ////////////////////////////////////////////////
