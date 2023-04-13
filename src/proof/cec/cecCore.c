@@ -460,7 +460,8 @@ clk = Abc_Clock();
         if ( pPars->fRunCSat )
             Cec_ManSatSolveCSat( pPat, pSrm, pParsSat ); 
         else
-            Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+            // Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+            Cec_ManSatSolve_Dual( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
 p->timeSat += Abc_Clock() - clk;
         // Updates equivalence classes using the patterns
         if ( Cec_ManFraClassesUpdate( p, pSim, pPat, pSrm ) )
@@ -473,7 +474,7 @@ p->timeSat += Abc_Clock() - clk;
         Gia_ManStop( pSrm );
 
         // for testing
-        printf("after sat, size of vIdsEquiv: %d\n", Vec_IntSize(p->pAig->vIdsEquiv));
+        // printf("after sat, size of vIdsEquiv: %d\n", Vec_IntSize(p->pAig->vIdsEquiv));
 
         // update the manager
         pSim->pAig = p->pAig = Gia_ManEquivReduceAndRemap( pTemp = p->pAig, 0, pParsSim->fDualOut );

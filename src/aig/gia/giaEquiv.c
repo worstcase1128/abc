@@ -706,12 +706,15 @@ Gia_Man_t * Gia_ManEquivReduce( Gia_Man_t * p, int fUseAll, int fDualOut, int fS
     Gia_ManForEachCi( p, pObj, i )
         pObj->Value = Gia_ManAppendCi(pNew);
     Gia_ManHashAlloc( pNew );
+    // printf("11 %d \n", Gia_ManAndNum(p));   // 11 2675
+    // printf("44 %d \n", Gia_ManAndNum(pNew));    // 44 0
     Gia_ManForEachCo( p, pObj, i )
         Gia_ManEquivReduce_rec( pNew, p, Gia_ObjFanin0(pObj), fUseAll, fDualOut );
+    // printf("22 %d \n", Gia_ManAndNum(pNew));    // 22 2376
     Gia_ManForEachCo( p, pObj, i )
         pObj->Value = Gia_ManAppendCo( pNew, Gia_ObjFanin0Copy(pObj) );
     Gia_ManHashStop( pNew );
-    Gia_ManSetRegNum( pNew, Gia_ManRegNum(p) );
+    Gia_ManSetRegNum( pNew, Gia_ManRegNum(p) );   
     return pNew;
 }
 

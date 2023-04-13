@@ -358,6 +358,7 @@ void Cec_ManPatCleanMark0( Gia_Man_t * p, Gia_Obj_t * pObj )
 ***********************************************************************/
 void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * pObj )
 {
+    // printf("saving pattern\n");
     Vec_Int_t * vPat;
     int nPatLits;
     abctime clkTotal = Abc_Clock();

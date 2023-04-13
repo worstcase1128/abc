@@ -1947,7 +1947,7 @@ int sat_solver_solve_internal(sat_solver* s)
     // s->verbosity = 1;
 
     if (s->verbosity >= 1){
-        printf("==================================[MINISAT]===================================\n");
+        printf("===============[satSolver/sat_solver_solve_internal(): MINISAT]===============\n");
         printf("| Conflicts |     ORIGINAL     |              LEARNT              | Progress |\n");
         printf("|           | Clauses Literals |   Limit Clauses Literals  Lit/Cl |          |\n");
         printf("==============================================================================\n");

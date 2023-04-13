@@ -497,7 +497,10 @@ int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 
     // if the nodes do not have SAT variables, allocate them
 clk2 = Abc_Clock();
-    Cec_CnfNodeAddToSolver( p, pObjR );
+    // printf(">>> Cec_CnfNodeAddToSolver %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+    // clauses and literals are mostly added here
+    Cec_CnfNodeAddToSolver( p, pObjR );    
+    // printf("<<< Cec_CnfNodeAddToSolver %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
 //ABC_PRT( "cnf", Abc_Clock() - clk2 );
 // Abc_Print( 1, "%d \n", p->pSat->size );
 
@@ -534,7 +537,9 @@ clk2 = Abc_Clock();
     {
 p->timeSatUnsat += Abc_Clock() - clk;
         Lit = lit_neg( Lit );
+        // printf("    >>> sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
         RetValue = sat_solver_addclause( p->pSat, &Lit, &Lit + 1 );
+        // printf("    <<< sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
         assert( RetValue );
         p->nSatUnsat++;
         p->nConfUnsat += p->pSat->stats.conflicts - nConflicts;       
@@ -724,6 +729,7 @@ void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPar
     p = Cec_ManSatCreate( pAig, pPars );
     pProgress = Bar_ProgressStart( stdout, Gia_ManPoNum(pAig) );
     Gia_ManForEachCo( pAig, pObj, i )
+    // i.e. for ( i = 0; (i < Vec_IntSize(pAig->vCos)) && ((pObj) = Gia_ManCo(pAig, i)); i++ )
     {
         if ( Gia_ObjIsConst0(Gia_ObjFanin0(pObj)) )
         {
@@ -736,9 +742,14 @@ void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPar
         }
         Bar_ProgressUpdate( pProgress, i, "SAT..." );
 clk2 = Abc_Clock();
+        // return 1 for unsat; 0 for unsat; -1 for undef
         status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
         pObj->fMark0 = (status == 0);
         pObj->fMark1 = (status == 1);
+        // if(status==1) printf("unsat ");
+        // if(vIdsOrig) printf("vIdsOrig ");
+        // if(pPars->fSaveCexes) printf("fSaveCexes ");
+        // if(status==1 || pPars->fSaveCexes || vIdsOrig)  printf("|\n");
         if ( status == 1 && vIdsOrig )
         {
             int iObj1 = Vec_IntEntry(vMiterPairs, 2*i);
@@ -774,6 +785,95 @@ clk2 = Abc_Clock();
         Cec_ManSatPrintStats( p );
     Cec_ManSatStop( p );
 }
+
+void Cec_ManSatSolve_Dual( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPars, Vec_Int_t * vIdsOrig, Vec_Int_t * vMiterPairs, Vec_Int_t * vEquivPairs, int f0Proved )
+{
+    // for testing **
+    // if ( pPars->fVerbose)
+        Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatSolve_Dual()\n" );
+
+    Bar_Progress_t * pProgress = NULL;
+    // Cec_ManSat_t * p1, *p2;
+    Gia_Obj_t * pObj;
+    int i, status;
+    abctime clk = Abc_Clock(), clk2;
+    Vec_PtrFreeP( &pAig->vSeqModelVec );
+    if ( pPars->fSaveCexes )
+        pAig->vSeqModelVec = Vec_PtrStart( Gia_ManCoNum(pAig) );
+    // reset the manager
+    if ( pPat )
+    {
+        pPat->iStart = Vec_StrSize(pPat->vStorage);
+        pPat->nPats = 0;
+        pPat->nPatLits = 0;
+        pPat->nPatLitsMin = 0;
+    } 
+    Gia_ManSetPhase( pAig );
+    Gia_ManLevelNum( pAig );
+    Gia_ManIncrementTravId( pAig );
+    Cec_ManSat_t * p1 = Cec_ManSatCreate( pAig, pPars );
+    Cec_ManSat_t * p2 = Cec_ManSatCreate( pAig, pPars );
+    pProgress = Bar_ProgressStart( stdout, Gia_ManPoNum(pAig) );
+    // Gia_ManForEachCo( pAig, pObj, i )
+    for ( i = 0; (i < Vec_IntSize(pAig->vCos)) && ((pObj) = Gia_ManCo(pAig, i)); i++ )
+    {
+        Cec_ManSat_t * p;
+        if(i%2) p = p1;
+        else p = p2;
+        if ( Gia_ObjIsConst0(Gia_ObjFanin0(pObj)) )
+        {
+            status = !Gia_ObjFaninC0(pObj);
+            pObj->fMark0 = (status == 0);
+            pObj->fMark1 = (status == 1);
+            if ( pPars->fSaveCexes )
+                Vec_PtrWriteEntry( pAig->vSeqModelVec, i, status ? (Abc_Cex_t *)(ABC_PTRINT_T)1 : Cex_ManGenSimple(p, i) );
+            continue;
+        }
+        Bar_ProgressUpdate( pProgress, i, "SAT..." );
+clk2 = Abc_Clock();
+        // return 1 for unsat; 0 for unsat; -1 for undef
+        status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
+        pObj->fMark0 = (status == 0);
+        pObj->fMark1 = (status == 1);
+        if ( status == 1 && vIdsOrig )
+        {
+            int iObj1 = Vec_IntEntry(vMiterPairs, 2*i);
+            int iObj2 = Vec_IntEntry(vMiterPairs, 2*i+1);
+            int OrigId1 = Vec_IntEntry(vIdsOrig, iObj1);
+            int OrigId2 = Vec_IntEntry(vIdsOrig, iObj2);
+            assert( OrigId1 >= 0 && OrigId2 >= 0 );
+            Vec_IntPushTwo( vEquivPairs, OrigId1, OrigId2 );
+        }
+        if ( pPars->fSaveCexes && status != -1 )
+            Vec_PtrWriteEntry( pAig->vSeqModelVec, i, status ? (Abc_Cex_t *)(ABC_PTRINT_T)1 : Cex_ManGenCex(p, i) );
+
+        if ( f0Proved && status == 1 )
+            Gia_ManPatchCoDriver( pAig, i, 0 );
+
+        if ( status != 0 )
+            continue;
+        // save the pattern
+        if ( pPat )
+        {
+            abctime clk3 = Abc_Clock();
+            Cec_ManPatSavePattern( pPat, p, pObj );
+            pPat->timeTotalSave += Abc_Clock() - clk3;
+        }
+        // quit if one of them is solved
+        if ( pPars->fCheckMiter )
+            break;
+    }
+    p1->timeTotal = Abc_Clock() - clk;
+    p2->timeTotal = Abc_Clock() - clk;
+    Bar_ProgressStop( pProgress );
+    if ( pPars->fVerbose ){
+        Cec_ManSatPrintStats( p1 );
+        Cec_ManSatPrintStats( p2 );
+    }
+    Cec_ManSatStop( p1 );
+    Cec_ManSatStop( p2 );
+}
+
 
 /**Function*************************************************************
 
