@@ -19,6 +19,7 @@
 ***********************************************************************/
 
 #include "cecInt.h"
+#include <pthread.h>
 
 ABC_NAMESPACE_IMPL_START
 
@@ -471,6 +472,7 @@ int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 {
     // for testing **
     // Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatCheckNode()\n" );
+    // printf("    >>> sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
 
     Gia_Obj_t * pObjR = Gia_Regular(pObj);
     int nBTLimit = p->pPars->nBTLimit;
@@ -742,7 +744,7 @@ void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPar
         }
         Bar_ProgressUpdate( pProgress, i, "SAT..." );
 clk2 = Abc_Clock();
-        // return 1 for unsat; 0 for unsat; -1 for undef
+        // return 1 for unsat; 0 for sat; -1 for undef
         status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
         pObj->fMark0 = (status == 0);
         pObj->fMark1 = (status == 1);
@@ -789,7 +791,7 @@ clk2 = Abc_Clock();
 void Cec_ManSatSolve_Dual( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPars, Vec_Int_t * vIdsOrig, Vec_Int_t * vMiterPairs, Vec_Int_t * vEquivPairs, int f0Proved )
 {
     // for testing **
-    // if ( pPars->fVerbose)
+    if ( pPars->fVerbose)
         Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatSolve_Dual()\n" );
 
     Bar_Progress_t * pProgress = NULL;
@@ -819,6 +821,7 @@ void Cec_ManSatSolve_Dual( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t *
     {
         Cec_ManSat_t * p;
         if(i%2) p = p1;
+        // else continue;
         else p = p2;
         if ( Gia_ObjIsConst0(Gia_ObjFanin0(pObj)) )
         {
@@ -872,6 +875,229 @@ clk2 = Abc_Clock();
     }
     Cec_ManSatStop( p1 );
     Cec_ManSatStop( p2 );
+}
+
+
+#define PAR_THR_MAX 20
+typedef struct Par_ThData_t_
+{
+    Cec_ManSat_t * p;
+    Gia_Obj_t * pObj;
+    Cec_ManPat_t *pPat;
+    Gia_Man_t * pAig;
+    Cec_ParSat_t * pPars;
+    Vec_Int_t * vIdsOrig;
+    Vec_Int_t * vMiterPairs;
+    Vec_Int_t * vEquivPairs;
+    int f0Proved;
+    int iThread;
+    int fWorking;
+    int pId;
+} Par_ThData_t;
+pthread_mutex_t mutex;
+
+void *Cec_ManSatSolve_OnePthread(void * pArg ){
+    // pthread_mutex_lock(&mutex);
+    Par_ThData_t * pThData = (Par_ThData_t *)pArg;
+    Cec_ManSat_t * p = pThData->p;
+    Gia_Obj_t * pObj = pThData->pObj;
+    Cec_ManPat_t *pPat = pThData->pPat;
+    Gia_Man_t * pAig = pThData->pAig;
+    Cec_ParSat_t * pPars = pThData->pPars;
+    Vec_Int_t * vIdsOrig = pThData->vIdsOrig;
+    Vec_Int_t * vMiterPairs = pThData->vMiterPairs;
+    Vec_Int_t * vEquivPairs = pThData->vEquivPairs;
+    int f0Proved =  pThData->f0Proved;
+    int i = pThData->pId;
+    int iThread = pThData->iThread;
+    abctime clk = Abc_Clock(), clk2;
+    Bar_Progress_t * pProgress = NULL;
+    int status;
+    lbool testing = false;
+    if(testing) printf("    in thread %d\n", iThread);
+    // printf("    in thread %d on obj %d %d\n", iThread, i, pThData->fWorking);
+    // Gia_ManForEachCo( pAig, pObj, i )
+    // for ( i = 0; (i < Vec_IntSize(pAig->vCos)) && ((pObj) = Gia_ManCo(pAig, i)); i++ )
+    // {
+    if ( Gia_ObjIsConst0(Gia_ObjFanin0(pObj)) )
+    {
+        status = !Gia_ObjFaninC0(pObj);
+        // printf("before %d %d\n", pObj->fMark0, pObj->fMark1);
+        pObj->fMark0 = (status == 0);
+        pObj->fMark1 = (status == 1);
+        if ( pPars->fSaveCexes )
+            Vec_PtrWriteEntry( pAig->vSeqModelVec, i, status ? (Abc_Cex_t *)(ABC_PTRINT_T)1 : Cex_ManGenSimple(p, i) );
+        // continue;
+        goto finalize;
+    }
+    Bar_ProgressUpdate( pProgress, i, "SAT..." );
+clk2 = Abc_Clock();
+    // return 1 for unsat; 0 for unsat; -1 for undef
+    // printf(">>> Cec_CnfNodeAddToSolver %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+    status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
+    pObj->fMark0 = (status == 0);
+    pObj->fMark1 = (status == 1);
+    if ( status == 1 && vIdsOrig )
+    {
+        int iObj1 = Vec_IntEntry(vMiterPairs, 2*i);
+        int iObj2 = Vec_IntEntry(vMiterPairs, 2*i+1);
+        int OrigId1 = Vec_IntEntry(vIdsOrig, iObj1);
+        int OrigId2 = Vec_IntEntry(vIdsOrig, iObj2);
+        assert( OrigId1 >= 0 && OrigId2 >= 0 );
+        Vec_IntPushTwo( vEquivPairs, OrigId1, OrigId2 );
+    }
+    if ( pPars->fSaveCexes && status != -1 )
+        Vec_PtrWriteEntry( pAig->vSeqModelVec, i, status ? (Abc_Cex_t *)(ABC_PTRINT_T)1 : Cex_ManGenCex(p, i) );
+
+    if ( f0Proved && status == 1 )
+        Gia_ManPatchCoDriver( pAig, i, 0 );
+
+    if ( status != 0 ){
+        goto finalize;
+    }
+    // save the pattern
+    if ( pPat)
+    {
+        pthread_mutex_lock(&mutex);
+        if(testing) printf("    thread %d using lock\n", iThread);
+        abctime clk3 = Abc_Clock();
+        // printf("assert1: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+        // assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
+        Cec_ManPatSavePattern( pPat, p, pObj );
+        pPat->timeTotalSave += Abc_Clock() - clk3;
+        if(testing) printf("    thread %d free lock\n", iThread);
+        pthread_mutex_unlock(&mutex);
+    }
+    // quit if one of them is solved
+    if ( pPars->fCheckMiter ){
+        goto finalize;
+    }
+    // }
+finalize:
+
+    // printf("    done thread %d\n", iThread);
+    // printf("    done1 thread %d %d %d\n", iThread, i, pThData->fWorking);
+    p->timeTotal = Abc_Clock() - clk;
+    Bar_ProgressStop( pProgress );
+    Cec_ManSatStop( p );
+    if(testing) printf("    done thread %d on obj %d %d\n", iThread, i, pThData->fWorking);
+    // pthread_mutex_unlock(&mutex);
+    pThData->fWorking = 0;
+    pthread_exit( NULL );
+    // return NULL;
+}
+
+
+void Cec_ManSatSolve_Pthread( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPars, Vec_Int_t * vIdsOrig, Vec_Int_t * vMiterPairs, Vec_Int_t * vEquivPairs, int f0Proved )
+{
+    int nProcs = 10;
+    // for testing **
+    lbool testing = false;
+    if ( pPars->fVerbose || testing)
+        Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatSolve_Pthread()  #thread=%d(%d)\n", nProcs, PAR_THR_MAX );
+    if(pPat && testing) printf("save the pattern!!!!!!!!\n");
+    else if(testing) printf("don't save pattern\n");
+    Bar_Progress_t * pProgress = NULL;
+    // Cec_ManSat_t * p1, *p2;
+    // Gia_Obj_t * pObj;
+    int i,j, status;
+    // abctime clk = Abc_Clock(), clk2;
+    Vec_PtrFreeP( &pAig->vSeqModelVec );
+    if ( pPars->fSaveCexes )
+        pAig->vSeqModelVec = Vec_PtrStart( Gia_ManCoNum(pAig) );
+    // reset the manager
+    if ( pPat )
+    {
+        pPat->iStart = Vec_StrSize(pPat->vStorage);
+        pPat->nPats = 0;
+        pPat->nPatLits = 0;
+        pPat->nPatLitsMin = 0;
+    } 
+    Gia_ManSetPhase( pAig );
+    Gia_ManLevelNum( pAig );
+    Gia_ManIncrementTravId( pAig );
+
+    pthread_mutex_init(&mutex, NULL);
+
+    Par_ThData_t ThData[PAR_THR_MAX];
+    pthread_t WorkerThread[PAR_THR_MAX];
+    for ( i = 0; i < nProcs; i++ ){
+        // ThData[i].p = Cec_ManSatCreate( pAig, pPars );
+        ThData[i].pPat = pPat;
+        ThData[i].pAig = pAig;
+        ThData[i].pPars = pPars;
+        ThData[i].vIdsOrig = vIdsOrig;
+        ThData[i].vMiterPairs = vMiterPairs;
+        ThData[i].vEquivPairs = vEquivPairs;
+        ThData[i].f0Proved = f0Proved;
+        ThData[i].fWorking = 0;
+    }
+
+    if(testing) printf("total j: %d\n", Vec_IntSize(pAig->vCos));
+    for ( j = 0, i=0; (j < Vec_IntSize(pAig->vCos)); j++, i++ ){
+        Gia_Obj_t * pObj = Gia_ManCo(pAig, j);
+        i %= nProcs;
+        // pthread_join ( WorkerThread[i], NULL );
+        // while(ThData[i].fWorking){
+        //     printf("    thread %d still working j=%d\n", i, j);
+        // }
+        // for ( i = 0; i < nProcs; i++ )
+        // {
+        while ( true ){
+            if(ThData[i].fWorking==0)
+                break;
+            // else printf("   node %d thread %d still working\n", j, i);
+            i++;
+            i %= nProcs;
+        }
+        if(testing) printf("j=%d, i=%d\n", j,i);
+        // TODO: use it incrementally
+        ThData[i].p = Cec_ManSatCreate( pAig, pPars );
+        ThData[i].pObj = pObj;
+        // ThData[i].pPat = pPat;
+        // ThData[i].pAig = pAig;
+        // ThData[i].pPars = pPars;
+        // ThData[i].vIdsOrig = vIdsOrig;
+        // ThData[i].vMiterPairs = vMiterPairs;
+        // ThData[i].vEquivPairs = vEquivPairs;
+        // ThData[i].f0Proved = f0Proved;
+        ThData[i].fWorking = 1;
+        ThData[i].iThread = i;
+        ThData[i].pId = j;
+
+        status = pthread_create( &WorkerThread[i], NULL, Cec_ManSatSolve_OnePthread, (void *)(ThData + i) );
+        // }
+
+        // the code below is not working
+        // if(i==nProcs-1){
+        //     for (int k = 0; k < nProcs; k++)
+        //         pthread_join(WorkerThread[k], NULL);
+        // }
+    }
+
+    pProgress = Bar_ProgressStart( stdout, Gia_ManPoNum(pAig) );
+
+    Bar_ProgressStop( pProgress );
+    // if ( pPars->fVerbose ){
+    //     Cec_ManSatPrintStats( p1 );
+    //     Cec_ManSatPrintStats( p2 );
+    // }
+    pthread_mutex_destroy(&mutex);
+    if(testing) printf("all done safely!!!\n");
+    // pthread_exit(NULL);
+
+    // for (int k = 0; k < nProcs; k++){
+        // printf("waiting for thread %d\n", k);
+        // if(ThData[k].fWorking)
+        // pthread_join(WorkerThread[k], NULL);
+        // printf("done for thread %d\n", k);
+    // }
+    // wait for all used threads to finish
+    for ( int k = 0; k < nProcs; k++ )
+        if ( ThData[k].fWorking )
+            k = -1;
+    // sleep(1);
+    return;
 }
 
 

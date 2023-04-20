@@ -5,12 +5,17 @@ ABC is always changing but the current snapshot is believed to be stable.
 ## Version Description: 
 
 annotation: There is no much modification. This version can help me understand the flow better.
+try to split the sat solver into two sub sat solver
+To switch between them, see src/proof/cec/cecCore.c/Cec_ManSatSweeping (around L464)
+Main modifications happen at cecSolve.c/Cec_ManSatSolve_Dual
 
 Online note can be found at: [ABC note](https://docs.google.com/document/d/1M-UTdjznJdqUcuBmLw1-TUuy5CijGcvozut0IyyAIt8/edit)
 
-## Compiling:
+## Compiling and run:
 
-`make ABC_USE_NO_READLINE=1 -j20`
+` make ABC_USE_NO_READLINE=1 -j20 `
+` ./abc -c "&r i10.aig; &ps; &fraig -v; &ps" `
+` ./abc -c "&r logic_my_suite/voter.aig; &ps; &fraig -v; &ps" `
 
 
 Running the demo program by running the binary in the command-line mode:

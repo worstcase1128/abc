@@ -341,11 +341,22 @@ void Cec_ManSimulation( Gia_Man_t * pAig, Cec_ParSim_t * pPars )
   SeeAlso     []
 
 ***********************************************************************/
+
+
+int64_t getCurrentTime(){    
+   struct timeval time;    
+   gettimeofday(&time, NULL);   
+//    printf("s: %ld, us: %ld, ms: %ld\n", time.tv_sec, time.tv_usec, (time.tv_sec*1000 + time.tv_usec/1000));
+   return time.tv_sec * 1000 + time.tv_usec / 1000;    
+}  
+
 Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSilent )
 {
     // for testing **
     if ( pPars->fVerbose )
         Abc_Print( 1, "Enter cecCore.c/Cec_ManSatSweeping()\n" );
+    int64_t real_time1 = getCurrentTime();
+    // printf("real time entering Cec_ManSatSweeping %ld\n", real_time1);
 
     int fOutputResult = 0;
     Cec_ParSat_t ParsSat, * pParsSat = &ParsSat;
@@ -461,7 +472,8 @@ clk = Abc_Clock();
             Cec_ManSatSolveCSat( pPat, pSrm, pParsSat ); 
         else
             // Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
-            Cec_ManSatSolve_Dual( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+            // Cec_ManSatSolve_Dual( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+            Cec_ManSatSolve_Pthread( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
 p->timeSat += Abc_Clock() - clk;
         // Updates equivalence classes using the patterns
         if ( Cec_ManFraClassesUpdate( p, pSim, pPat, pSrm ) )
@@ -550,6 +562,9 @@ finalize:
         Abc_PrintTimeP( 1, "Sat ", p->timeSat-pPat->timeTotalSave, Abc_Clock() - (int)clkTotal );
         Abc_PrintTimeP( 1, "Pat ", p->timePat+pPat->timeTotalSave, Abc_Clock() - (int)clkTotal );
         Abc_PrintTime( 1, "Time", (int)(Abc_Clock() - clkTotal) );
+        int64_t real_time2 = getCurrentTime();
+        // printf("real time leaving Cec_ManSatSweeping %ld\n", real_time2);
+        printf("real total time %.2lf s\n", 1.0*(real_time2-real_time1)/1000);
     }
 
     pTemp = p->pAig; p->pAig = NULL;

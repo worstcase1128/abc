@@ -370,6 +370,7 @@ void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * 
 //clk = Abc_Clock();
     Gia_ManIncrementTravId( p->pAig );
     nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) );
+    // printf("assert2: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
     assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
     pMan->nPatLits += nPatLits;
     pMan->nPatLitsAll += nPatLits;
