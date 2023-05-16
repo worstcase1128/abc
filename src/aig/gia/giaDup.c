@@ -1388,7 +1388,8 @@ Gia_Man_t * Gia_ManDupFlopClass( Gia_Man_t * p, int iClass )
 
 ***********************************************************************/
 Gia_Man_t * Gia_ManDupMarked( Gia_Man_t * p )
-{
+{    
+    // printf("    3.33#and for %d times\n", Gia_ManAndNum(p)); // 186
     Gia_Man_t * pNew;
     Gia_Obj_t * pObj;
     int i, nRos = 0, nRis = 0;
@@ -1475,7 +1476,8 @@ Gia_Man_t * Gia_ManDupMarked( Gia_Man_t * p )
             assert( Abc_Lit2Var(pObj->Value) > Abc_Lit2Var(pSibl->Value) );
             pNew->pSibls[Abc_Lit2Var(pObj->Value)] = Abc_Lit2Var(pSibl->Value);
         }
-    }
+    }    
+    // printf("    3.44#and for %d times\n", Gia_ManAndNum(pNew));  //28
     return pNew;
 }
 

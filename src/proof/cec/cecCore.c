@@ -390,7 +390,7 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
     // prepare the managers
     // SAT sweeping
     // p: Cec_ManFra_t, create an AIG
-    // pAig is the original AIG, p->pAig is the reduced
+    // pAig is the original AIG, p->pAig is the reduced one
     p = Cec_ManFraStart( pIni, pPars );
     if ( pPars->fDualOut )
         pPars->fColorDiff = 1;
@@ -402,15 +402,15 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
     pParsSim->fDualOut    = pPars->fDualOut;
     pParsSim->fVerbose    = pPars->fVerbose;
     pSim = Cec_ManSimStart( pIni, pParsSim );
-    // SAT solving
+    // prepare the SAT solving
     Cec_ManSatSetDefaultParams( pParsSat );
     pParsSat->nBTLimit = pPars->nBTLimit;
     pParsSat->fVerbose = pPars->fVeryVerbose;
+    pParsSat->fMultiThread = pPars->fMultiThread;
     // init simulation patterns
     // pPat: Cec_ManPat_t
     pPat = Cec_ManPatStart();
     //pPat->fVerbose = pPars->fVeryVerbose;
-
     // start equivalence classes
 clk = Abc_Clock();
     if ( p->pAig->pReprs == NULL )
@@ -426,6 +426,7 @@ p->timeSim += Abc_Clock() - clk;
     // perform solving
     for ( i = 1; i <= pPars->nItersMax; i++ )
     {
+        printf("\n----the %d round of Cec_ManSatSweeping----\n", i);
         clk2 = Abc_Clock();
         nMatches = 0;
         if ( pPars->fDualOut ){
@@ -433,12 +434,18 @@ p->timeSim += Abc_Clock() - clk;
 //            p->pAig->pIso = Cec_ManDetectIsomorphism( p->pAig );
 //            Gia_ManEquivTransform( p->pAig, 1 );
         }
+        // if(i==1)    pSrm = pAig;
+        // else pSrm = Cec_ManFraSpecReduction( p ); 
         pSrm = Cec_ManFraSpecReduction( p ); 
+        printf("size of pSrm->vCos: %d \n", Vec_IntSize(pSrm->vCos));
+        // pSrm = pAig;
 
 //        Gia_AigerWrite( pSrm, "gia_srm.aig", 0, 0, 0 );
 
+    // printf("gua111\n");
         if ( pPars->fVeryVerbose )
             Gia_ManPrintStats( pSrm, NULL );
+    // printf("gua222\n");
         // Considered all available candidate equivalences
         if ( Gia_ManCoNum(pSrm) == 0 ){
             Gia_ManStop( pSrm );
@@ -468,12 +475,14 @@ clk = Abc_Clock();
         // printf("before sat, size of vIdsEquiv: %d\n", Vec_IntSize(p->pAig->vIdsEquiv));
 
         // call csat or sat
-        if ( pPars->fRunCSat )
+        if( pPars->fMultiThread>1)
+            Cec_ManSatSolve_Pthread( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+        else if ( pPars->fRunCSat )
             Cec_ManSatSolveCSat( pPat, pSrm, pParsSat ); 
         else
-            // Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+            Cec_ManSatSolve( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
             // Cec_ManSatSolve_Dual( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
-            Cec_ManSatSolve_Pthread( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
+            // Cec_ManSatSolve_Pthread( pPat, pSrm, pParsSat, p->pAig->vIdsOrig, p->vXorNodes, pAig->vIdsEquiv, 0 ); 
 p->timeSat += Abc_Clock() - clk;
         // Updates equivalence classes using the patterns
         if ( Cec_ManFraClassesUpdate( p, pSim, pPat, pSrm ) )
@@ -489,7 +498,9 @@ p->timeSat += Abc_Clock() - clk;
         // printf("after sat, size of vIdsEquiv: %d\n", Vec_IntSize(p->pAig->vIdsEquiv));
 
         // update the manager
+        // printf("before Gia_ManEquivReduceAndRemap and: %d\n", Gia_ManAndNum(p->pAig) );
         pSim->pAig = p->pAig = Gia_ManEquivReduceAndRemap( pTemp = p->pAig, 0, pParsSim->fDualOut );
+        // printf("after Gia_ManEquivReduceAndRemap and: %d\n", Gia_ManAndNum(p->pAig) );
         if ( p->pAig == NULL )
         {
             p->pAig = pTemp;
@@ -502,6 +513,10 @@ p->timeSat += Abc_Clock() - clk;
                 i, p->nAllProved, p->nAllDisproved, p->nAllFailed, nMatches, Gia_ManAndNum(p->pAig) );
             Abc_PrintTime( 1, "Time", Abc_Clock() - clk2 );
         }
+
+        printf("after the round, p->pAig is like: \n");
+        Gia_ManPrintStats( p->pAig, NULL );
+
         if ( Gia_ManAndNum(p->pAig) == 0 ){
             if ( p->pPars->fVerbose )
                 Abc_Print( 1, "Network after reduction is empty.\n" );

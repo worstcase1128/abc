@@ -1736,6 +1736,8 @@ int sat_solver_addclause(sat_solver* s, lit* begin, lit* end)
     int maxvar;
     lit last;
     assert( begin < end );
+    // for testing
+    // s->fPrintClause = 1;
     if ( s->fPrintClause )
     {
         for ( i = begin; i < end; i++ )

@@ -175,6 +175,8 @@ Vec_Str_t * Gia_AigerWriteLiterals( Vec_Int_t * vLits )
 ***********************************************************************/
 Gia_Man_t * Gia_AigerReadFromMemory( char * pContents, int nFileSize, int fGiaSimple, int fSkipStrash, int fCheck )
 {
+    // last three paras are 0 0 0 by default
+    int print_ascii = 0;
     Gia_Man_t * pNew, * pTemp;
     Vec_Ptr_t * vNamesIn = NULL, * vNamesOut = NULL, * vNamesRegIn = NULL, * vNamesRegOut = NULL, * vNamesNode = NULL;
     Vec_Int_t * vLits = NULL, * vPoTypes = NULL;
@@ -197,6 +199,7 @@ Gia_Man_t * Gia_AigerReadFromMemory( char * pContents, int nFileSize, int fGiaSi
     nOutputs = atoi( (const char *)pCur );  while ( *pCur != ' ' ) pCur++; pCur++;
     // read the number of nodes
     nAnds = atoi( (const char *)pCur );     while ( *pCur != ' ' && *pCur != '\n' ) pCur++; 
+    if(print_ascii) printf("%d %d %d %d %d\n", nTotal, nInputs, nLatches, nOutputs, nAnds);
     if ( *pCur == ' ' )
     {
 //        assert( nOutputs == 0 );
@@ -283,6 +286,7 @@ Gia_Man_t * Gia_AigerReadFromMemory( char * pContents, int nFileSize, int fGiaSi
         vLits = Gia_AigerReadLiterals( &pCur, nLatches + nOutputs );
     }
 
+    int and_count = 0;
     // create the AND gates
     if ( !fGiaSimple && !fSkipStrash )
         Gia_ManHashAlloc( pNew );
@@ -291,9 +295,13 @@ Gia_Man_t * Gia_AigerReadFromMemory( char * pContents, int nFileSize, int fGiaSi
         uLit = ((i + 1 + nInputs + nLatches) << 1);
         uLit1 = uLit  - Gia_AigerReadUnsigned( &pCur );
         uLit0 = uLit1 - Gia_AigerReadUnsigned( &pCur );
+        if(print_ascii) printf("%d %d %d\n", uLit, uLit0, uLit1);
 //        assert( uLit1 > uLit0 );
         iNode0 = Abc_LitNotCond( Vec_IntEntry(vNodes, uLit0 >> 1), uLit0 & 1 );
         iNode1 = Abc_LitNotCond( Vec_IntEntry(vNodes, uLit1 >> 1), uLit1 & 1 );
+        and_count++;
+        // acturally, iNodes0 = uLit0, iNodes1 = uLit1
+        // printf("adding and %d between %d(%d) , %d(%d)\n", and_count, iNode0, uLit0, iNode1, uLit1);
         assert( Vec_IntSize(vNodes) == i + 1 + nInputs + nLatches );
         if ( !fGiaSimple && fSkipStrash )
         {
@@ -997,6 +1005,7 @@ Gia_Man_t * Gia_AigerReadFromMemory( char * pContents, int nFileSize, int fGiaSi
     if ( vNamesOut ) Vec_PtrFreeFree( vNamesOut );
     if ( vNamesRegIn ) Vec_PtrFreeFree( vNamesRegIn );
     if ( vNamesRegOut ) Vec_PtrFreeFree( vNamesRegOut );
+    // printf("final size: %d \n", Vec_IntSize(pNew->vCos));
     return pNew;
 }
 

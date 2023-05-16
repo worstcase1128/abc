@@ -503,6 +503,14 @@ static inline int          Gia_ObjIsAndNotBuf( Gia_Obj_t * pObj )              {
 static inline int          Gia_ObjIsCand( Gia_Obj_t * pObj )                   { return Gia_ObjIsAnd(pObj) || Gia_ObjIsCi(pObj); } 
 static inline int          Gia_ObjIsConst0( Gia_Obj_t * pObj )                 { return pObj->iDiff0 == GIA_NONE && pObj->iDiff1 == GIA_NONE;     } 
 static inline int          Gia_ManObjIsConst0( Gia_Man_t * p, Gia_Obj_t * pObj){ return pObj == p->pObjs;                        } 
+static inline char *       Gia_ObjType(Gia_Obj_t * pObj ){
+    if(Gia_ObjIsXor(pObj)) return "xor";
+    else if(Gia_ObjIsAnd(pObj)) return "and";
+    else if(Gia_ObjIsCi(pObj))  return "ci";
+    else if(Gia_ObjIsCo(pObj))  return "co";
+    else if(Gia_ObjIsConst0(pObj))  return "const0";
+    else return "other";
+}
 
 static inline int          Gia_Obj2Lit( Gia_Man_t * p, Gia_Obj_t * pObj )      { return Abc_Var2Lit(Gia_ObjId(p, Gia_Regular(pObj)), Gia_IsComplement(pObj)); }
 static inline Gia_Obj_t *  Gia_Lit2Obj( Gia_Man_t * p, int iLit )              { return Gia_NotCond(Gia_ManObj(p, Abc_Lit2Var(iLit)), Abc_LitIsCompl(iLit));  }

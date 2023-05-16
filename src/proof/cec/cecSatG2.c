@@ -218,6 +218,7 @@ void Cec4_ManSetParams( Cec_ParFra_t * pPars )
     pPars->nSatVarMax     =    1000;    // the max number of SAT variables before recycling SAT solver
     pPars->nCallsRecycle  =     500;    // calls to perform before recycling SAT solver
     pPars->nGenIters      =     100;    // pattern generation iterations
+    pPars->fMultiThread   =       0;    // number of threads
 }
 
 /**Function*************************************************************

@@ -151,6 +151,8 @@ int Cec_ManPatComputePattern_rec( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t 
     assert( Gia_ObjIsAnd(pObj) );
     Counter += Cec_ManPatComputePattern_rec( pSat, p, Gia_ObjFanin0(pObj) );
     Counter += Cec_ManPatComputePattern_rec( pSat, p, Gia_ObjFanin1(pObj) );
+    // fMarks is the value of the variable pObj, not SAT or UNSAT
+    // pObj->fMarks = 1 iff both of its fanins are true
     pObj->fMark1 = (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) & 
                    (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj));
     return Counter;
@@ -359,6 +361,7 @@ void Cec_ManPatCleanMark0( Gia_Man_t * p, Gia_Obj_t * pObj )
 void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * pObj )
 {
     // printf("saving pattern\n");
+    lbool testing = false; 
     Vec_Int_t * vPat;
     int nPatLits;
     abctime clkTotal = Abc_Clock();
@@ -369,8 +372,9 @@ void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * 
     // compute values in the cone of influence
 //clk = Abc_Clock();
     Gia_ManIncrementTravId( p->pAig );
+    if(testing) printf("    beforeComputePattern: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
     nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) );
-    // printf("assert2: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+    if(testing) printf("    afterComputePattern:  %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
     assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
     pMan->nPatLits += nPatLits;
     pMan->nPatLitsAll += nPatLits;
@@ -401,6 +405,52 @@ void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * 
     Cec_ManPatStore( pMan, vPat );
     pMan->timeTotal += Abc_Clock() - clkTotal;
 }
+
+void Cec_ManPatSavePattern_Pthread( Cec_ManPat_t *  pMan, Cec_ManSat_t *  p, Gia_Obj_t * pObj , int iThread)
+{
+    lbool testing = false;
+    if(testing) printf("    in thread %d of Cec_ManPatSavePattern_Pthread\n", iThread);
+    Vec_Int_t * vPat;
+    int nPatLits;
+    abctime clkTotal = Abc_Clock();
+    assert( Gia_ObjIsCo(pObj) );
+    pMan->nPats++;
+    pMan->nPatsAll++;
+    // compute values in the cone of influence
+    Gia_ManIncrementTravId( p->pAig );
+    // assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
+    if(testing) printf("    before: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+    nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) );
+    if(testing) printf("    after: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+    if(! ((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 )){
+        printf("detecting error at node %d!!!\n", Gia_ObjId(p->pAig, pObj));
+        printf("    after: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+        // Cec_ManTFIPrint(p->pAig, pObj);
+    }
+    
+    assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
+    pMan->nPatLits += nPatLits;
+    pMan->nPatLitsAll += nPatLits;
+    // compute sensitizing path
+    Vec_IntClear( pMan->vPattern1 );
+    Gia_ManIncrementTravId( p->pAig );
+    Cec_ManPatComputePattern1_rec( p->pAig, Gia_ObjFanin0(pObj), pMan->vPattern1 );
+    // compute sensitizing path
+    Vec_IntClear( pMan->vPattern2 );
+    Gia_ManIncrementTravId( p->pAig );
+    Cec_ManPatComputePattern2_rec( p->pAig, Gia_ObjFanin0(pObj), pMan->vPattern2 );
+    // compare patterns
+    vPat = Vec_IntSize(pMan->vPattern1) < Vec_IntSize(pMan->vPattern2) ? pMan->vPattern1 : pMan->vPattern2;
+    pMan->nPatLitsMin += Vec_IntSize(vPat);
+    pMan->nPatLitsMinAll += Vec_IntSize(vPat);
+    // sort pattern
+    Vec_IntSort( vPat, 0 );
+    // save pattern
+    Cec_ManPatStore( pMan, vPat );
+    pMan->timeTotal += Abc_Clock() - clkTotal;
+}
+
+
 void Cec_ManPatSavePatternCSat( Cec_ManPat_t * pMan, Vec_Int_t * vPat )
 {
     // sort pattern

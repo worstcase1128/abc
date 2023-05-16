@@ -190,8 +190,11 @@ void Cec_AddClausesSuper( Cec_ManSat_t * p, Gia_Obj_t * pNode, Vec_Ptr_t * vSupe
     // create storage for literals
     nLits = Vec_PtrSize(vSuper) + 1;
     pLits = ABC_ALLOC( int, nLits );
-    // suppose AND-gate is A & B = C
-    // add !A => !C   or   A + !C
+    // for an AND-gate A & B = C
+    // !A => !C   A + !C
+    // !B => !C   B + !C
+    // for A & B & C = D
+    // A + !D  B + !D  C + !D
     Vec_PtrForEachEntry( Gia_Obj_t *, vSuper, pFanin, i )
     {
         pLits[0] = toLitCond(Cec_ObjSatNum(p,Gia_Regular(pFanin)), Gia_IsComplement(pFanin));
@@ -204,7 +207,6 @@ void Cec_AddClausesSuper( Cec_ManSat_t * p, Gia_Obj_t * pNode, Vec_Ptr_t * vSupe
         RetValue = sat_solver_addclause( p->pSat, pLits, pLits + 2 );
         assert( RetValue );
     }
-    // add A & B => C   or   !A + !B + C
     Vec_PtrForEachEntry( Gia_Obj_t *, vSuper, pFanin, i )
     {
         pLits[i] = toLitCond(Cec_ObjSatNum(p,Gia_Regular(pFanin)), !Gia_IsComplement(pFanin));
@@ -218,6 +220,8 @@ void Cec_AddClausesSuper( Cec_ManSat_t * p, Gia_Obj_t * pNode, Vec_Ptr_t * vSupe
     {
         if ( pNode->fPhase )  pLits[nLits-1] = lit_neg( pLits[nLits-1] );
     }
+    // A & B => C   or   !A + !B + C
+    // !A + !B + !C + D
     RetValue = sat_solver_addclause( p->pSat, pLits, pLits + nLits );
     assert( RetValue );
     ABC_FREE( pLits );
@@ -306,6 +310,7 @@ void Cec_ObjAddToFrontier( Cec_ManSat_t * p, Gia_Obj_t * pObj, Vec_Ptr_t * vFron
 ***********************************************************************/
 void Cec_CnfNodeAddToSolver( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 { 
+    lbool testing = false;
     Vec_Ptr_t * vFrontier;
     Gia_Obj_t * pNode, * pFanin;
     int i, k, fUseMuxes = 1;
@@ -323,11 +328,20 @@ void Cec_CnfNodeAddToSolver( Cec_ManSat_t * p, Gia_Obj_t * pObj )
     // start the frontier
     vFrontier = Vec_PtrAlloc( 100 );
     Cec_ObjAddToFrontier( p, pObj, vFrontier );
+    int before_clauses = p->pSat->stats.clauses;
+    long before_lits = p->pSat->stats.clauses_literals;
+    if(testing) printf("    >>>> Cec_CnfNodeAddToSolver cl: %d lit: %ld \n",   p->pSat->stats.clauses, p->pSat->stats.clauses_literals);
+    // if(testing) printf("    vFrontire size %d cap %d\n", vFrontier->nSize, vFrontier->nCap);
     // explore nodes in the frontier
-    Vec_PtrForEachEntry( Gia_Obj_t *, vFrontier, pNode, i )
+    // Vec_PtrForEachEntry( Gia_Obj_t *, vFrontier, pNode, i )
+    for ( i = 0; (i < Vec_PtrSize(vFrontier)) && (((pNode) = (Gia_Obj_t *)Vec_PtrEntry(vFrontier, i)), 1); i++ )
     {
+        // printf("    frontier is and? %s\n", Gia_ObjIsAnd(pNode)?"yes":"no" ); // always yes
+        if(testing) printf("        pNodeId: %d\n", Gia_ObjId(p->pAig, pNode));
         // create the supergate
         assert( Cec_ObjSatNum(p,pNode) );
+        int sub_before_clauses = p->pSat->stats.clauses;
+        long sub_before_lits = p->pSat->stats.clauses_literals;
         if ( fUseMuxes && Gia_ObjIsMuxType(pNode) )
         {
             Vec_PtrClear( p->vFanins );
@@ -336,8 +350,10 @@ void Cec_CnfNodeAddToSolver( Cec_ManSat_t * p, Gia_Obj_t * pObj )
             Vec_PtrPushUnique( p->vFanins, Gia_ObjFanin1( Gia_ObjFanin0(pNode) ) );
             Vec_PtrPushUnique( p->vFanins, Gia_ObjFanin1( Gia_ObjFanin1(pNode) ) );
             Vec_PtrForEachEntry( Gia_Obj_t *, p->vFanins, pFanin, k )
+            // for ( k = 0; (k < Vec_PtrSize(p->vFanins)) && (((pFanin) = (Gia_Obj_t *)Vec_PtrEntry(p->vFanins, k)), 1); k++ )
                 Cec_ObjAddToFrontier( p, Gia_Regular(pFanin), vFrontier );
             Cec_AddClausesMux( p, pNode );
+            if(testing) printf("            add1 cl: %d -> %d lit: %ld -> %ld \n",   sub_before_clauses, p->pSat->stats.clauses, sub_before_lits, p->pSat->stats.clauses_literals);
         }
         else
         {
@@ -345,9 +361,12 @@ void Cec_CnfNodeAddToSolver( Cec_ManSat_t * p, Gia_Obj_t * pObj )
             Vec_PtrForEachEntry( Gia_Obj_t *, p->vFanins, pFanin, k )
                 Cec_ObjAddToFrontier( p, Gia_Regular(pFanin), vFrontier );
             Cec_AddClausesSuper( p, pNode, p->vFanins );
+            if(testing) printf("            add2 cl: %d -> %d lit: %ld -> %ld \n",   sub_before_clauses, p->pSat->stats.clauses, sub_before_lits, p->pSat->stats.clauses_literals);
         }
         assert( Vec_PtrSize(p->vFanins) > 1 );
     }
+    if(testing) printf("    <<<< Cec_CnfNodeAddToSolver cl: %d -> %d  lit: %ld -> %ld\n",   
+        before_clauses, p->pSat->stats.clauses, before_lits, p->pSat->stats.clauses_literals);
     Vec_PtrFree( vFrontier );
 }
 
@@ -473,6 +492,7 @@ int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
     // for testing **
     // Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatCheckNode()\n" );
     // printf("    >>> sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+    lbool testing = false;
 
     Gia_Obj_t * pObjR = Gia_Regular(pObj);
     int nBTLimit = p->pPars->nBTLimit;
@@ -499,10 +519,12 @@ int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 
     // if the nodes do not have SAT variables, allocate them
 clk2 = Abc_Clock();
-    // printf(">>> Cec_CnfNodeAddToSolver %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+
+    if(testing) printf("    before ManSatCheckNode #cl: %d #lit: %ld \n",   p->pSat->stats.clauses, p->pSat->stats.clauses_literals);
     // clauses and literals are mostly added here
-    Cec_CnfNodeAddToSolver( p, pObjR );    
-    // printf("<<< Cec_CnfNodeAddToSolver %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+    Cec_CnfNodeAddToSolver( p, pObjR );   
+    if(testing) printf("    after ManSatCheckNode #cl: %d #lit: %ld \n",   p->pSat->stats.clauses, p->pSat->stats.clauses_literals);
+    if(testing) printf("    ManSatCheckNode pObjRId %d Lit%d\n", Gia_ObjId(p->pAig, pObjR), toLitCond( Cec_ObjSatNum(p,pObjR), Gia_IsComplement(pObj) )); 
 //ABC_PRT( "cnf", Abc_Clock() - clk2 );
 // Abc_Print( 1, "%d \n", p->pSat->size );
 
@@ -523,8 +545,10 @@ clk2 = Abc_Clock();
     Lit = toLitCond( Cec_ObjSatNum(p,pObjR), Gia_IsComplement(pObj) );
     if ( p->pPars->fPolarFlip )
     {
+        // flop by default
         if ( pObjR->fPhase )  Lit = lit_neg( Lit );
     }
+    if(testing) printf("    ManSatCheckNode Lit %d\n", Lit);
 //Sat_SolverWriteDimacs( p->pSat, "temp.cnf", pLits, pLits + 2, 1 );
 // Sat_SolverWriteDimacs( p->pSat, "temp.cnf", &Lit, &Lit + 2, 1 );
 clk = Abc_Clock();
@@ -539,9 +563,11 @@ clk2 = Abc_Clock();
     {
 p->timeSatUnsat += Abc_Clock() - clk;
         Lit = lit_neg( Lit );
-        // printf("    >>> sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+        if(testing) printf("    assumption failed Lit: %d\n", Lit);
+        // p->pSat->fPrintClause = 1;
+        // assign the literal by adding a clause whose size is 1
         RetValue = sat_solver_addclause( p->pSat, &Lit, &Lit + 1 );
-        // printf("    <<< sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
+        // p->pSat->fPrintClause = 0;
         assert( RetValue );
         p->nSatUnsat++;
         p->nConfUnsat += p->pSat->stats.conflicts - nConflicts;       
@@ -709,6 +735,7 @@ Abc_Cex_t * Cex_ManGenCex( Cec_ManSat_t * p, int iOut )
 }
 void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPars, Vec_Int_t * vIdsOrig, Vec_Int_t * vMiterPairs, Vec_Int_t * vEquivPairs, int f0Proved )
 {
+    lbool testing = false;
     Bar_Progress_t * pProgress = NULL;
     Cec_ManSat_t * p;
     Gia_Obj_t * pObj;
@@ -730,9 +757,12 @@ void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPar
     Gia_ManIncrementTravId( pAig );
     p = Cec_ManSatCreate( pAig, pPars );
     pProgress = Bar_ProgressStart( stdout, Gia_ManPoNum(pAig) );
+    if(testing) printf("size of pAig->vCos: %d \n", Vec_IntSize(pAig->vCos));
     Gia_ManForEachCo( pAig, pObj, i )
     // i.e. for ( i = 0; (i < Vec_IntSize(pAig->vCos)) && ((pObj) = Gia_ManCo(pAig, i)); i++ )
     {
+        // for testing
+        // printf("ManSatSolve pObj %d\n", Gia_ObjId(pAig, pObj));
         if ( Gia_ObjIsConst0(Gia_ObjFanin0(pObj)) )
         {
             status = !Gia_ObjFaninC0(pObj);
@@ -740,14 +770,25 @@ void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPar
             pObj->fMark1 = (status == 1);
             if ( pPars->fSaveCexes )
                 Vec_PtrWriteEntry( pAig->vSeqModelVec, i, status ? (Abc_Cex_t *)(ABC_PTRINT_T)1 : Cex_ManGenSimple(p, i) );
+            if(testing) printf("should jump to next co in Cec_ManSatSolve\n");
             continue;
         }
         Bar_ProgressUpdate( pProgress, i, "SAT..." );
 clk2 = Abc_Clock();
         // return 1 for unsat; 0 for sat; -1 for undef
+        // printf("ManSatSolve Gia_ObjChild0(pObj) %d\n", Gia_ObjId(pAig, Gia_ObjChild0(pObj)));
+        // if(testing) printf("ManSatSolve pObj %d  Gia_ObjChild0(pObj) %d\n", Gia_ObjId(pAig, pObj), Gia_ObjId(pAig, Gia_ObjChild0(pObj)));
+
+        // Cec_ManTFIPrint(pAig, pObj);
+
+        if(testing) printf("ManSatSolve pObj %d  Gia_ObjChild0(pObj) %d Gia_ObjChild1(pObj) %d\n", Gia_ObjId(pAig, pObj), 
+            Gia_ObjId(pAig, Gia_ObjChild0(pObj)), Gia_ObjId(pAig, Gia_ObjChild1(pObj)));
+        // printf("obj is co?? %s\n", Gia_ObjIsCo(pObj)?"yes":"no");   // yes
+        // printf("obj is and?? %s\n", Gia_ObjChild0(pObj) ?"yes":"no");   // yes
         status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
-        pObj->fMark0 = (status == 0);
-        pObj->fMark1 = (status == 1);
+        if(testing) printf("sat status %d (%s)\n\n", status, status==1?"unsat":(status==0?"sat":"undef"));
+        pObj->fMark0 = (status == 0);   // sat, disproved
+        pObj->fMark1 = (status == 1);   // unsat, proved
         // if(status==1) printf("unsat ");
         // if(vIdsOrig) printf("vIdsOrig ");
         // if(pPars->fSaveCexes) printf("fSaveCexes ");
@@ -774,6 +815,10 @@ clk2 = Abc_Clock();
         if ( pPat )
         {
             abctime clk3 = Abc_Clock();
+            if(testing) printf("save pattern\n");
+            // if(! ((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1))
+            //     printf("assert1: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+            // assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
             Cec_ManPatSavePattern( pPat, p, pObj );
             pPat->timeTotalSave += Abc_Clock() - clk3;
         }
@@ -932,7 +977,7 @@ void *Cec_ManSatSolve_OnePthread(void * pArg ){
     }
     Bar_ProgressUpdate( pProgress, i, "SAT..." );
 clk2 = Abc_Clock();
-    // return 1 for unsat; 0 for unsat; -1 for undef
+    // return 1 for unsat; 0 for sat; -1 for undef
     // printf(">>> Cec_CnfNodeAddToSolver %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
     status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
     pObj->fMark0 = (status == 0);
@@ -958,14 +1003,17 @@ clk2 = Abc_Clock();
     // save the pattern
     if ( pPat)
     {
+        if(testing ) printf("    thread %d need lock\n", iThread);
         pthread_mutex_lock(&mutex);
-        if(testing) printf("    thread %d using lock\n", iThread);
+        if(testing ) printf("    thread %d using lock\n", iThread);
         abctime clk3 = Abc_Clock();
-        // printf("assert1: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+        // if(! ((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1))
+        //     printf("assert1: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
         // assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
-        Cec_ManPatSavePattern( pPat, p, pObj );
+        // Cec_ManPatSavePattern( pPat, p, pObj );
+        Cec_ManPatSavePattern_Pthread( pPat, p, pObj, iThread);
         pPat->timeTotalSave += Abc_Clock() - clk3;
-        if(testing) printf("    thread %d free lock\n", iThread);
+        if(testing ) printf("    thread %d free lock\n", iThread);
         pthread_mutex_unlock(&mutex);
     }
     // quit if one of them is solved
@@ -990,10 +1038,12 @@ finalize:
 
 void Cec_ManSatSolve_Pthread( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPars, Vec_Int_t * vIdsOrig, Vec_Int_t * vMiterPairs, Vec_Int_t * vEquivPairs, int f0Proved )
 {
-    int nProcs = 10;
+    int nProcs = pPars->fMultiThread;
+    assert(nProcs>1);
+    assert(nProcs<=PAR_THR_MAX);
     // for testing **
     lbool testing = false;
-    if ( pPars->fVerbose || testing)
+    if ( pPars->fVerbose || testing || true)
         Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatSolve_Pthread()  #thread=%d(%d)\n", nProcs, PAR_THR_MAX );
     if(pPat && testing) printf("save the pattern!!!!!!!!\n");
     else if(testing) printf("don't save pattern\n");

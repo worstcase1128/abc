@@ -486,7 +486,21 @@ void Gia_ManEquivPrintClasses( Gia_Man_t * p, int fVerbose, float Mem )
     Abc_Print( 1, "cst =%8d  cls =%7d  lit =%8d  unused =%8d  proof =%6d\n",
         Counter0, Counter, nLits, CounterX, Proved );
     assert( Gia_ManEquivCheckLits( p, nLits ) );
-    if ( fVerbose )
+
+    // print types of classes and their numbers
+    int class_count[10] = {0};
+    Gia_ManForEachClass( p, i )
+    {
+        int cnt = Gia_ManEquivCountOne(p, i);
+        if(cnt<10)  class_count[cnt]++;
+        else    class_count[9]++;
+    }
+
+    // printf("print detailed equivalent classes\n");
+    // for(i=2; i<10; i++)
+    //     printf("%d: %d\n", i, class_count[i]);
+
+    if ( fVerbose)
     {
 //        int Ent;
         Abc_Print( 1, "Const0 (%d) = ", Counter0 );
@@ -627,7 +641,9 @@ void Gia_ManEquivReduce_rec( Gia_Man_t * pNew, Gia_Man_t * p, Gia_Obj_t * pObj, 
     assert( Gia_ObjIsAnd(pObj) );
     Gia_ManEquivReduce_rec( pNew, p, Gia_ObjFanin0(pObj), fUseAll, fDualOut );
     Gia_ManEquivReduce_rec( pNew, p, Gia_ObjFanin1(pObj), fUseAll, fDualOut );
+    // 'and' is actually added here
     pObj->Value = Gia_ManHashAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
+    // printf("added\n");
 }
 
 /**Function*************************************************************
@@ -643,11 +659,14 @@ void Gia_ManEquivReduce_rec( Gia_Man_t * pNew, Gia_Man_t * p, Gia_Obj_t * pObj, 
 ***********************************************************************/
 Gia_Man_t * Gia_ManEquivReduce( Gia_Man_t * p, int fUseAll, int fDualOut, int fSkipPhase, int fVerbose )
 {
+    // the parameter is (p,0,0,0,0) by default
     Gia_Man_t * pNew;
     Gia_Obj_t * pObj;
     int i;
     if ( !p->pReprs && p->pSibls )
     {
+        // seems that it is not used
+        printf("find a equivalence calsses!!\n");
         int * pMap = ABC_FALLOC( int, Gia_ManObjNum(p) );
         p->pReprs = ABC_CALLOC( Gia_Rpr_t, Gia_ManObjNum(p) );
         for ( i = 0; i < Gia_ManObjNum(p); i++ )
@@ -709,7 +728,11 @@ Gia_Man_t * Gia_ManEquivReduce( Gia_Man_t * p, int fUseAll, int fDualOut, int fS
     // printf("11 %d \n", Gia_ManAndNum(p));   // 11 2675
     // printf("44 %d \n", Gia_ManAndNum(pNew));    // 44 0
     Gia_ManForEachCo( p, pObj, i )
+    // for ( i = 0; (i < Vec_IntSize(p->vCos)) && ((pObj) = Gia_ManCo(p, i)); i++ )
+    {
         Gia_ManEquivReduce_rec( pNew, p, Gia_ObjFanin0(pObj), fUseAll, fDualOut );
+        // printf("44 %d \n", Gia_ManAndNum(pNew));
+    }
     // printf("22 %d \n", Gia_ManAndNum(pNew));    // 22 2376
     Gia_ManForEachCo( p, pObj, i )
         pObj->Value = Gia_ManAppendCo( pNew, Gia_ObjFanin0Copy(pObj) );
@@ -985,7 +1008,9 @@ Gia_Man_t * Gia_ManEquivRemapDfs( Gia_Man_t * p )
 Gia_Man_t * Gia_ManEquivReduceAndRemap( Gia_Man_t * p, int fSeq, int fMiterPairs )
 {
     Gia_Man_t * pNew, * pFinal;
+    // printf("before 1111 and: %d\n", Gia_ManAndNum(pNew) );
     pNew = Gia_ManEquivReduce( p, 0, 0, 0, 0 );
+    // printf("after 2222 and: %d\n", Gia_ManAndNum(pNew) );
     if ( pNew == NULL )
         return NULL;
     Gia_ManOrigIdsRemap( p, pNew );

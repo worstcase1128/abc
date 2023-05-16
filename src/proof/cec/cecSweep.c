@@ -44,6 +44,8 @@ ABC_NAMESPACE_IMPL_START
 ***********************************************************************/
 Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
 {
+    lbool testing = true;
+    lbool dtesting = false; // detailed 
     Gia_Man_t * pNew, * pTemp;
     Gia_Obj_t * pObj, * pRepr = NULL;
     int iRes0, iRes1, iRepr, iNode, iMiter;
@@ -59,11 +61,16 @@ Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
     piCopies = ABC_FALLOC( int, Gia_ManObjNum(p->pAig) );
     pDepths  = ABC_CALLOC( int, Gia_ManObjNum(p->pAig) );
     piCopies[0] = 0;
+    if(testing) printf(">>>Cec_ManFraSpecReduction\n");
+    // Gia_ManPrintStats( pNew, NULL );
+    if(testing) printf("    p->pAig size: %d\n", p->pAig->nObjs);
+    int count1 = 0, count2=0, count3=0, count4=0;
     Gia_ManForEachObj1( p->pAig, pObj, i )
     {
         if ( Gia_ObjIsCi(pObj) ) 
         {
             piCopies[i] = Gia_ManAppendCi( pNew );
+// printf("1 p[%d]=%d\n", i, piCopies[i]);
             continue;
         }
         if ( Gia_ObjIsCo(pObj) ) 
@@ -73,16 +80,28 @@ Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
              continue;
         iRes0 = Abc_LitNotCond( piCopies[Gia_ObjFaninId0(pObj,i)], Gia_ObjFaninC0(pObj) );
         iRes1 = Abc_LitNotCond( piCopies[Gia_ObjFaninId1(pObj,i)], Gia_ObjFaninC1(pObj) );
+// printf("origin and %d&%d\n", toLitCond( Gia_ObjFaninId0(pObj,i), Gia_ObjFaninC0(pObj) ),  toLitCond( Gia_ObjFaninId1(pObj,i), Gia_ObjFaninC1(pObj)) );
+        // return the lit of And gate in pNew
         iNode = piCopies[i] = Gia_ManHashAnd( pNew, iRes0, iRes1 );
+if(dtesting) printf("2 p[%d]=%d %d&%d (ori %d&%d) total: %d\n", i, piCopies[i], iRes0, iRes1 , toLitCond( Gia_ObjFaninId0(pObj,i), Gia_ObjFaninC0(pObj) ),  toLitCond( Gia_ObjFaninId1(pObj,i), Gia_ObjFaninC1(pObj)), Gia_ManAndNum(pNew));
+        count2++;
         pDepths[i] = Abc_MaxInt( pDepths[Gia_ObjFaninId0(pObj,i)], pDepths[Gia_ObjFaninId1(pObj,i)] );
         if ( Gia_ObjRepr(p->pAig, i) == GIA_VOID || Gia_ObjFailed(p->pAig, i) )
             continue;
         assert( Gia_ObjRepr(p->pAig, i) < i );
-        iRepr = piCopies[Gia_ObjRepr(p->pAig, i)];
+        int ori_repr = Gia_ObjRepr(p->pAig, i);
+        iRepr = piCopies[ori_repr];
         if ( iRepr == -1 )
             continue;
+        // 445
+if(dtesting) printf("trying iRepr %d = piCopies[%d], iNode %d\n", iRepr, ori_repr, iNode);
+        // the repr of i is ori_repr
+if(dtesting) printf("node %d and %d in same equiv class\n", i, ori_repr);
+        count3++;
         if ( Abc_LitRegular(iNode) == Abc_LitRegular(iRepr) )
             continue;
+        // 395
+        count4++;
         if ( p->pPars->nLevelMax && 
             (Gia_ObjLevelId(p->pAig, i)  > p->pPars->nLevelMax || 
              Gia_ObjLevelId(p->pAig, Abc_Lit2Var(iRepr)) > p->pPars->nLevelMax) )
@@ -104,11 +123,20 @@ Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
         }
         pRepr = Gia_ManObj( p->pAig, Gia_ObjRepr(p->pAig, i) );
         fCompl = Gia_ObjPhaseReal(pObj) ^ Gia_ObjPhaseReal(pRepr);
+        // printf("iRepr %d\n", iRepr);
+if(dtesting)    printf("piCopies[i]: %d -> ", piCopies[i]);
         piCopies[i] = Abc_LitNotCond( iRepr, fCompl );
+if(dtesting)    printf(" %d\n", piCopies[i]);
+// printf("8 p[%d]=%d\n", i, piCopies[i]);
         if ( Gia_ObjProved(p->pAig, i) )
             continue;
         // produce speculative miter
         iMiter = Gia_ManHashXor( pNew, iNode, piCopies[i] );
+// printf("origin and %d&%d\n", toLitCond( Gia_ObjFaninId0(pObj,i), Gia_ObjFaninC0(pObj) ),  toLitCond( Gia_ObjFaninId1(pObj,i), Gia_ObjFaninC1(pObj) ));
+// printf("2 p[%d]=%d %d&%d total: %d\n", i, piCopies[i], iRes0, iRes1 , Gia_ManAndNum(pNew));
+        // printf("adding miter between node %d and %d\n", Abc_Lit2Var(iNode), Abc_Lit2Var(piCopies[i]));
+if(dtesting)    printf("adding miter between %d(%d) and %d(%d)\n", iNode, Abc_Lit2Var(iNode), piCopies[i], Abc_Lit2Var(piCopies[i]));
+        count1++;
         Gia_ManAppendCo( pNew, iMiter );
         Vec_IntPush( p->vXorNodes, Gia_ObjRepr(p->pAig, i) );
         Vec_IntPush( p->vXorNodes, i );
@@ -117,12 +145,23 @@ Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
         if ( p->pPars->nDepthMax && pDepths[i] >= p->pPars->nDepthMax )
             piCopies[i] = -1;
     }
+    // for(int i=0; i<Gia_ManObjNum(p->pAig); i++)
+    //     printf("%d: %d\n", i, piCopies[i]);
+    // count1 = count4
+    // count3 is the times trying to adding iMiter, normally count3 > count1 = count4
+    // if number of speculated const node is cst, the number of classes with i nodes is num[i]
+    // count3 = cst + sigma( (i-1)*num[i] )
+    if(testing) printf("    adding iMiter for %d times (trial: %d)\n", count1 , count3);
+    if(testing) printf("    adding and for %d times\n", count2);
+    if(testing) printf("<<<Cec_ManFraSpecReduction\n");
     ABC_FREE( piCopies );
     ABC_FREE( pDepths );
     Gia_ManHashStop( pNew );
     Gia_ManSetRegNum( pNew, 0 );
+    // reduced below
     pNew = Gia_ManCleanup( pTemp = pNew );
     Gia_ManStop( pTemp );
+    Gia_ManPrintStats( pNew, NULL );
     return pNew;
 }
 
@@ -190,6 +229,7 @@ int Cec_ManFraClassesUpdate( Cec_ManFra_t * p, Cec_ManSim_t * pSim, Cec_ManPat_t
     Vec_Ptr_t * vInfo;
     Gia_Obj_t * pObj, * pObjOld, * pReprOld;
     int i, k, iRepr, iNode;
+    int casep=0, cased=0, casef=0;
     abctime clk;
 clk = Abc_Clock();
     vInfo = Cec_ManPatCollectPatterns( pPat, Gia_ManCiNum(p->pAig), pSim->nWords );
@@ -258,6 +298,7 @@ p->timeSim += Abc_Clock() - clk;
         pObjOld = Gia_ManObj(p->pAig, iNode);
         if ( pObj->fMark1 )
         { // proved
+            casep++;
             assert( pObj->fMark0 == 0 );
             assert( !Gia_ObjProved(p->pAig, iNode) );
             if ( pReprOld->fMark0 == 0 && pObjOld->fMark0 == 0 )
@@ -270,6 +311,7 @@ p->timeSim += Abc_Clock() - clk;
         }
         else if ( pObj->fMark0 )
         { // disproved
+            cased++;
             assert( pObj->fMark1 == 0 );
             if ( pReprOld->fMark0 == 0 && pObjOld->fMark0 == 0 )
 //            if ( pObjOld->fMark0 == 0 )
@@ -281,6 +323,7 @@ p->timeSim += Abc_Clock() - clk;
         }
         else
         { // failed
+            casef++;
             assert( pObj->fMark0 == 0 );
             assert( pObj->fMark1 == 0 );
             assert( !Gia_ObjFailed(p->pAig, iNode) );
@@ -289,6 +332,8 @@ p->timeSim += Abc_Clock() - clk;
             p->nAllFailed++;
         }
     } 
+    // printf("! %d %d %d %d\n\n", k, p->nAllProved, p->nAllDisproved, p->nAllFailed);
+    // printf("! %d %d %d %d\n\n", k, casep, cased, casef);
     p->nAllProvedS    += p->nAllProved;
     p->nAllDisprovedS += p->nAllDisproved;
     p->nAllFailedS    += p->nAllFailed;

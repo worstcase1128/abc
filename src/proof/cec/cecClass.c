@@ -774,7 +774,7 @@ references:
             Vec_IntForEachEntry( p->vClassTemp, Ent, k )
                 Cec_ManSimSimDeref( p, Ent );
         }
-    }
+    }   // Gia_ManForEachObj1
 
     if ( p->pPars->fConstCorr )
     {
@@ -844,6 +844,7 @@ void Cec_ManSimCreateInfo( Cec_ManSim_t * p, Vec_Ptr_t * vInfoCis, Vec_Ptr_t * v
     }
     else 
     {
+        // here by default
         for ( i = 0; i < Gia_ManCiNum(p->pAig); i++ )
         {
             pRes0 = (unsigned *)Vec_PtrEntry( vInfoCis, i );
@@ -866,6 +867,8 @@ void Cec_ManSimCreateInfo( Cec_ManSim_t * p, Vec_Ptr_t * vInfoCis, Vec_Ptr_t * v
 ***********************************************************************/
 int Cec_ManSimClassesPrepare( Cec_ManSim_t * p, int LevelMax )
 {
+    // printf("in entering Cec_ManSimClassesPrepare\n");
+    // Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
     Gia_Obj_t * pObj;
     int i;
     assert( p->pAig->pReprs == NULL );
@@ -908,8 +911,10 @@ int Cec_ManSimClassesPrepare( Cec_ManSim_t * p, int LevelMax )
     }
     else
     {
+        // here by default
         p->nWords = 1;
         do {
+            // printf("sub round\n");
             if ( p->pPars->fVerbose )
                 Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
             for ( i = 0; i < 4; i++ )
@@ -922,6 +927,8 @@ int Cec_ManSimClassesPrepare( Cec_ManSim_t * p, int LevelMax )
         }
         while ( p->nWords <= p->pPars->nWords );
     }
+    // printf("in leaving Cec_ManSimClassesPrepare\n");
+    // Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
     return 0;
 }
 
@@ -937,7 +944,8 @@ int Cec_ManSimClassesPrepare( Cec_ManSim_t * p, int LevelMax )
 
 ***********************************************************************/
 int Cec_ManSimClassesRefine( Cec_ManSim_t * p )
-{
+{    
+    // printf("in entering Cec_ManSimClassesRefine\n");
     int i;
     Gia_ManCreateValueRefs( p->pAig );
     p->nWords = p->pPars->nWords;
@@ -945,12 +953,17 @@ int Cec_ManSimClassesRefine( Cec_ManSim_t * p )
     {
         if ( (i % (p->pPars->nRounds / 5)) == 0 && p->pPars->fVerbose )
             Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
+        // printf("Cec_ManSimClassesRefine round: %d/%d \n", i+1, p->pPars->nRounds);
+        // Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
+        // printf("test done\n");
         Cec_ManSimCreateInfo( p, p->vCiSimInfo, p->vCoSimInfo );
         if ( Cec_ManSimSimulateRound( p, p->vCiSimInfo, p->vCoSimInfo ) )
             return 1;
     }
     if ( p->pPars->fVerbose )
         Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
+    // printf("in Cec_ManSimClassesRefine\n");
+    // Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
     return 0;
 }
 ////////////////////////////////////////////////////////////////////////

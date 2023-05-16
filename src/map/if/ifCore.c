@@ -120,6 +120,7 @@ int If_ManPerformMappingComb( If_Man_t * p )
     if ( p->pPars->fPreprocess && !p->pPars->fArea )
     {
         // map for delay
+        // ( If_Man_t * p, int nCutsUsed, int Mode, int fPreprocess, int fFirst, char * pLabel )
         If_ManPerformMappingRound( p, p->pPars->nCutsMax, 0, 1, 1, "Delay" );
         // map for delay second option
         p->pPars->fFancy = 1;

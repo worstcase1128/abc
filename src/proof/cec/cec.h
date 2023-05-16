@@ -54,6 +54,7 @@ struct Cec_ParSat_t_
     int              fLearnCls;     // perform clause learning
     int              fSaveCexes;    // saves counter-examples
     int              fVerbose;      // verbose stats
+    int              fMultiThread;  // number of threads
 };
 
 // simulation parameters
@@ -115,6 +116,7 @@ struct Cec_ParFra_t_
     int              fColorDiff;    // miter with separate outputs
     int              fSatSweeping;  // enable SAT sweeping
     int              fRunCSat;      // enable another solver
+    int              fMultiThread;  // solve with multi thread
     int              fUseCones;     // use cones
     int              fUseOrigIds;   // enable recording of original IDs
     int              fVeryVerbose;  // verbose stats

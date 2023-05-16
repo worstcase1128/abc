@@ -227,11 +227,12 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         // save the best cut from the previous iteration
         if ( !fPreprocess || pCut->nLeaves <= 1 )
             If_CutCopy( p, pCutSet->ppCuts[pCutSet->nCuts++], pCut );
-    }
+    }   // if ( !fFirst )
 
     // generate cuts
     If_ObjForEachCut( pObj->pFanin0, pCut0, i )
     If_ObjForEachCut( pObj->pFanin1, pCut1, k )
+    // for ( k = 0; (k < (pObj->pFanin1)->pCutSet->nCuts) && ((pCut1) = (pObj->pFanin1)->pCutSet->ppCuts[k]); k++ )
     {
         // get the next free cut
         assert( pCutSet->nCuts <= pCutSet->nCutsMax );
@@ -456,7 +457,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         // insert the cut into storage
         If_CutSort( p, pCutSet, pCut );
 //        If_CutTraverse( p, pObj, pCut );
-    } 
+    }   // traverse all cuts combinations of two fanins
     assert( pCutSet->nCuts > 0 );
 //    If_CutVerifyCuts( pCutSet, !p->pPars->fUseTtPerm );
 

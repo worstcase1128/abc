@@ -193,8 +193,10 @@ extern Cec_ManSim_t *       Cec_ManSimStart( Gia_Man_t * pAig, Cec_ParSim_t *  p
 extern void                 Cec_ManSimStop( Cec_ManSim_t * p );  
 extern Cec_ManFra_t *       Cec_ManFraStart( Gia_Man_t * pAig, Cec_ParFra_t *  pPars );  
 extern void                 Cec_ManFraStop( Cec_ManFra_t * p );
+extern void                 Cec_ManTFIPrint( Gia_Man_t * pAig,  Gia_Obj_t * pObj );
 /*=== cecPat.c ============================================================*/
 extern void                 Cec_ManPatSavePattern( Cec_ManPat_t *  pPat, Cec_ManSat_t *  p, Gia_Obj_t * pObj );
+extern void                 Cec_ManPatSavePattern_Pthread( Cec_ManPat_t *  pPat, Cec_ManSat_t *  p, Gia_Obj_t * pObj , int thread);
 extern void                 Cec_ManPatSavePatternCSat( Cec_ManPat_t * pMan, Vec_Int_t * vPat );
 extern Vec_Ptr_t *          Cec_ManPatCollectPatterns( Cec_ManPat_t *  pMan, int nInputs, int nWords );
 extern Vec_Ptr_t *          Cec_ManPatPackPatterns( Vec_Int_t * vCexStore, int nInputs, int nRegs, int nWordsInit );

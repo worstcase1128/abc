@@ -671,6 +671,9 @@ int Gia_ManHashXor( Gia_Man_t * p, int iLit0, int iLit1 )
         return Gia_ManHashOr(p, Gia_ManHashAnd(p, iLit0, Abc_LitNot(iLit1)), Gia_ManHashAnd(p, Abc_LitNot(iLit0), iLit1) );
     else
     {
+        // A xor B
+        // t1 = !A & B  t2 = A & !B
+        // A xor B = !( !t1 & !t2 )
         int fCompl = Abc_LitIsCompl(iLit0) ^ Abc_LitIsCompl(iLit1);
         int iTemp0 = Gia_ManHashAnd( p, Abc_LitRegular(iLit0), Abc_LitNot(Abc_LitRegular(iLit1)) );
         int iTemp1 = Gia_ManHashAnd( p, Abc_LitRegular(iLit1), Abc_LitNot(Abc_LitRegular(iLit0)) );
