@@ -19,6 +19,7 @@
 ***********************************************************************/
 
 #include "cecInt.h"
+// #define assert(expr)    (expr)?NULL:exit(0);
 
 ABC_NAMESPACE_IMPL_START
 
@@ -92,6 +93,7 @@ static inline void Cec_ManPatStore( Cec_ManPat_t * p, Vec_Int_t * vPat )
     NumberPrev = Vec_IntEntry( vPat, 0 );
     Cec_ManPatStoreNum( p, NumberPrev );
     Vec_IntForEachEntryStart( vPat, Number, i, 1 )
+    // for ( i = 1; (i < Vec_IntSize(vPat)) && (((Number) = Vec_IntEntry(vPat, i)), 1); i++ )
     {
         assert( NumberPrev < Number );
         Cec_ManPatStoreNum( p, Number - NumberPrev );
@@ -125,6 +127,51 @@ static inline void Cec_ManPatRestore( Cec_ManPat_t * p, Vec_Int_t * vPat )
     assert( Vec_IntSize(vPat) == Size );
 }
 
+// return 1 for true, 0 for false
+int Cec_ManPatPrintTFICNF_rec( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t * pObj , lbool print_tfi){
+    if ( Gia_ObjIsTravIdCurrent(p, pObj) ){
+        return pObj->fMark1;
+    }
+    Gia_ObjSetTravIdCurrent(p, pObj);
+    if ( Gia_ObjIsCi(pObj) ){
+        return pObj->fMark1 = Cec_ObjSatVarValue( pSat, pObj );
+    }
+
+    int value0 = Cec_ManPatPrintTFICNF_rec( pSat, p, Gia_ObjFanin0(pObj), print_tfi);
+    int value1 = Cec_ManPatPrintTFICNF_rec( pSat, p, Gia_ObjFanin1(pObj), print_tfi );
+    int objId0 = Gia_ObjId(p, Gia_ObjFanin0(pObj));
+    int objId1 = Gia_ObjId(p, Gia_ObjFanin1(pObj));
+    int thisObjId = Gia_ObjId(p, pObj);
+
+    int ret = (value0^Gia_ObjFaninC0(pObj)) & (value1^Gia_ObjFaninC1(pObj)) ;
+    pObj->fMark1 = ret;
+
+    if(print_tfi){
+        printf("%5d(%s) <- %c%5d(%s) & %c%5d(%s)\n", ret?thisObjId:-thisObjId, Gia_ObjType(pObj),
+            Gia_ObjFaninC0(pObj)?'!':' ', value0?objId0:-objId0, Gia_ObjType(Gia_ObjFanin0(pObj)),
+            Gia_ObjFaninC1(pObj)?'!':' ', value1?objId1:-objId1, Gia_ObjType(Gia_ObjFanin1(pObj)));
+    }
+    // if(ret != pObj->fMark1){
+    //     printf("pSat: %p, pAig: %p\n", pSat, p);
+    //     printf("node %d, ret: %d fMark1: %d \n", thisObjId, ret, pObj->fMark1);
+    //     printf("%d %d & %d %d\n", Gia_ObjFaninC0(pObj), value0, Gia_ObjFaninC1(pObj), value1);
+    //     printf("%d %d & %d %d\n", Gia_ObjFaninC0(pObj), Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC1(pObj), Gia_ObjFanin1(pObj)->fMark1);
+    //     assert(false);
+    // }
+    return ret;
+}
+
+
+int Cec_ManPatPrintTFICNF( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t * pObj ){
+    Gia_ManIncrementTravId( p );
+    lbool print_tfi = true;
+    printf(">>>> print the TFI of node %d (cnf)\n", Gia_ObjId(p, pObj));
+    int ret = Cec_ManPatPrintTFICNF_rec(pSat, p, pObj, print_tfi);
+    
+    printf("<<<< done with ret %d of node %d\n", ret, Gia_ObjId(p, pObj));
+    return ret;
+} 
+
 
 /**Function*************************************************************
 
@@ -137,7 +184,7 @@ static inline void Cec_ManPatRestore( Cec_ManPat_t * p, Vec_Int_t * vPat )
   SeeAlso     []
 
 ***********************************************************************/
-int Cec_ManPatComputePattern_rec( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t * pObj )
+int Cec_ManPatComputePattern_rec( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t * pObj, lbool print_tfi)
 {
     int Counter = 0;
     if ( Gia_ObjIsTravIdCurrent(p, pObj) )
@@ -146,15 +193,24 @@ int Cec_ManPatComputePattern_rec( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t 
     if ( Gia_ObjIsCi(pObj) )
     {
         pObj->fMark1 = Cec_ObjSatVarValue( pSat, pObj );
+        // printf("fMark %d for obj %d\n", pObj->fMark1, Gia_ObjId(p, pObj));
         return 1;
     }
     assert( Gia_ObjIsAnd(pObj) );
-    Counter += Cec_ManPatComputePattern_rec( pSat, p, Gia_ObjFanin0(pObj) );
-    Counter += Cec_ManPatComputePattern_rec( pSat, p, Gia_ObjFanin1(pObj) );
+    Counter += Cec_ManPatComputePattern_rec( pSat, p, Gia_ObjFanin0(pObj) , print_tfi);
+    Counter += Cec_ManPatComputePattern_rec( pSat, p, Gia_ObjFanin1(pObj) , print_tfi);
     // fMarks is the value of the variable pObj, not SAT or UNSAT
-    // pObj->fMarks = 1 iff both of its fanins are true
+    // pObj->fMark1 = 1 iff both of its fanins are true
     pObj->fMark1 = (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) & 
                    (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj));
+    if(print_tfi){
+        int objId0 = Gia_ObjId(p, Gia_ObjFanin0(pObj));
+        int objId1 = Gia_ObjId(p, Gia_ObjFanin1(pObj));
+        int thisObjId = Gia_ObjId(p, pObj);
+        printf("%5d(%s) <- %c%5d(%s) & %c%5d(%s)\n", pObj->fMark1?thisObjId:-thisObjId, Gia_ObjType(pObj),
+            Gia_ObjFaninC0(pObj)?'!':' ', Gia_ObjFanin0(pObj)->fMark1?objId0:-objId0, Gia_ObjType(Gia_ObjFanin0(pObj)),
+            Gia_ObjFaninC1(pObj)?'!':' ', Gia_ObjFanin1(pObj)->fMark1?objId1:-objId1, Gia_ObjType(Gia_ObjFanin1(pObj)));
+    }
     return Counter;
 }
 
@@ -180,15 +236,18 @@ void Cec_ManPatComputePattern1_rec( Gia_Man_t * p, Gia_Obj_t * pObj, Vec_Int_t *
         return;
     }
     assert( Gia_ObjIsAnd(pObj) );
+    // true at obj
     if ( pObj->fMark1 == 1 )
     {
         Cec_ManPatComputePattern1_rec( p, Gia_ObjFanin0(pObj), vPat );
         Cec_ManPatComputePattern1_rec( p, Gia_ObjFanin1(pObj), vPat );
     }
     else
+    // false at obj, at lease one of the childs is false
     {
-        assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 0 ||
-                (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj)) == 0 );
+        if(!((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 0 || (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj)) == 0))
+            printf("assert failed at pObj %d\n", Gia_ObjId(p, pObj));
+        assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 0 || (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj)) == 0 );
         if ( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 0 )
             Cec_ManPatComputePattern1_rec( p, Gia_ObjFanin0(pObj), vPat );
         else
@@ -225,8 +284,7 @@ void Cec_ManPatComputePattern2_rec( Gia_Man_t * p, Gia_Obj_t * pObj, Vec_Int_t *
     }
     else
     {
-        assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 0 ||
-                (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj)) == 0 );
+        assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 0 || (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj)) == 0 );
         if ( (Gia_ObjFanin1(pObj)->fMark1 ^ Gia_ObjFaninC1(pObj)) == 0 )
             Cec_ManPatComputePattern2_rec( p, Gia_ObjFanin1(pObj), vPat );
         else
@@ -362,6 +420,7 @@ void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * 
 {
     // printf("saving pattern\n");
     lbool testing = false; 
+    lbool print_tfi = false;
     Vec_Int_t * vPat;
     int nPatLits;
     abctime clkTotal = Abc_Clock();
@@ -371,10 +430,26 @@ void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * 
     pMan->nPatsAll++;
     // compute values in the cone of influence
 //clk = Abc_Clock();
+    // printf("begin nTravIds %d\n", p->pAig->nTravIds);
     Gia_ManIncrementTravId( p->pAig );
-    if(testing) printf("    beforeComputePattern: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
-    nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) );
-    if(testing) printf("    afterComputePattern:  %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+
+    if(testing) printf("    beforeComputePattern %d: %d %d %d\n", Gia_ObjId(p->pAig, pObj), Gia_ObjFaninC0(pObj), Gia_ObjFanin0(pObj)->fMark1, (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+    if(print_tfi)   printf(">>>> print the TFI of node %d (cnf)\n", Gia_ObjId(p->pAig, pObj));
+    nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) , print_tfi);
+    
+// Cec_ManPatPrintTFICNF( p, p->pAig, pObj);
+
+    // printf("end nTravIds %d\n", p->pAig->nTravIds);
+    if(print_tfi){
+        int objId0 = Gia_ObjId(p->pAig, Gia_ObjFanin0(pObj));
+        int objId1 = Gia_ObjId(p->pAig, Gia_ObjFanin1(pObj));
+        printf("co: %5d(%s) <- %c%5d(%s) & %c%5d(%s)\n", Gia_ObjId(p->pAig, pObj), Gia_ObjType(pObj),
+            Gia_ObjFaninC0(pObj)?'!':' ', Gia_ObjFanin0(pObj)->fMark1?objId0:-objId0, Gia_ObjType(Gia_ObjFanin0(pObj)),
+            Gia_ObjFaninC1(pObj)?'!':' ', Gia_ObjFanin1(pObj)->fMark1?objId1:-objId1, Gia_ObjType(Gia_ObjFanin1(pObj)));
+        printf("<<<< done\n");
+    }
+    if(testing) printf("    afterComputePattern:  %d %d %d\n", Gia_ObjFaninC0(pObj), Gia_ObjFanin0(pObj)->fMark1, (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+    // Gia_ObjChild0(pObj) should be SAT
     assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
     pMan->nPatLits += nPatLits;
     pMan->nPatLitsAll += nPatLits;
@@ -406,10 +481,12 @@ void Cec_ManPatSavePattern( Cec_ManPat_t * pMan, Cec_ManSat_t *  p, Gia_Obj_t * 
     pMan->timeTotal += Abc_Clock() - clkTotal;
 }
 
+// Gia_ObjChild0(pObj) is SAT
 void Cec_ManPatSavePattern_Pthread( Cec_ManPat_t *  pMan, Cec_ManSat_t *  p, Gia_Obj_t * pObj , int iThread)
 {
     lbool testing = false;
-    if(testing) printf("    in thread %d of Cec_ManPatSavePattern_Pthread\n", iThread);
+    lbool print_tfi = false;
+    if(testing) printf("    entering %d of Cec_ManPatSavePattern_Pthread\n", iThread);
     Vec_Int_t * vPat;
     int nPatLits;
     abctime clkTotal = Abc_Clock();
@@ -417,16 +494,38 @@ void Cec_ManPatSavePattern_Pthread( Cec_ManPat_t *  pMan, Cec_ManSat_t *  p, Gia
     pMan->nPats++;
     pMan->nPatsAll++;
     // compute values in the cone of influence
+// printf("begin nTravIds %d at %p (thread %d)\n", p->pAig->nTravIds, &p->pAig->pTravIds, iThread);
     Gia_ManIncrementTravId( p->pAig );
-    // assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
-    if(testing) printf("    before: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
-    nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) );
-    if(testing) printf("    after: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
-    if(! ((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 )){
-        printf("detecting error at node %d!!!\n", Gia_ObjId(p->pAig, pObj));
-        printf("    after: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
-        // Cec_ManTFIPrint(p->pAig, pObj);
+
+    if(testing) printf("    pSat: %p, pAig: %p, thread: %d\n", p, p->pAig, iThread);    
+    if(testing) printf("    before %d: %d %d %d\n", Gia_ObjId(p->pAig, pObj), Gia_ObjFaninC0(pObj), Gia_ObjFanin0(pObj)->fMark1, (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+
+    if(print_tfi)   printf(">>>> print the TFI of node %d (cnf) nTravIds %d thread %d \n", Gia_ObjId(p->pAig, pObj), p->pAig->nTravIds, iThread);
+
+    nPatLits = Cec_ManPatComputePattern_rec( p, p->pAig, Gia_ObjFanin0(pObj) , print_tfi);
+
+    if(print_tfi){
+        int objId0 = Gia_ObjId(p->pAig, Gia_ObjFanin0(pObj));
+        int objId1 = Gia_ObjId(p->pAig, Gia_ObjFanin1(pObj));
+        printf("co: %5d(%s) <- %c%5d(%s) & %c%5d(%s)\n", Gia_ObjId(p->pAig, pObj), Gia_ObjType(pObj),
+            Gia_ObjFaninC0(pObj)?'!':' ', Gia_ObjFanin0(pObj)->fMark1?objId0:-objId0, Gia_ObjType(Gia_ObjFanin0(pObj)),
+            Gia_ObjFaninC1(pObj)?'!':' ', Gia_ObjFanin1(pObj)->fMark1?objId1:-objId1, Gia_ObjType(Gia_ObjFanin1(pObj)));
+        printf("<<<< done\n");
     }
+
+// Cec_ManPatPrintTFICNF( p, p->pAig, Gia_ObjFanin0(pObj) );
+
+    if(testing) printf("    after: %d %d %d\n", Gia_ObjFaninC0(pObj), Gia_ObjFanin0(pObj)->fMark1, (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
+    // if(! ((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 )){
+    //     Gia_ManIncrementTravId( p->pAig );
+    //     printf("detecting error at node %d thread %d!!!\n", Gia_ObjId(p->pAig, Gia_ObjFanin0(pObj)), iThread);
+    //     // Cec_ManPatPrintTFICNF( p, p->pAig, pObj);
+    //     Cec_ManPatPrintTFICNF( p, p->pAig, Gia_ObjFanin0(pObj) );
+    //     printf("    after: %d %d %d thread %d\n", Gia_ObjFaninC0(pObj), Gia_ObjFanin0(pObj)->fMark1, (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)), iThread);
+    //     // exit(0);
+    //     // getchar();
+    //     // Cec_ManTFIPrint(p->pAig, pObj);
+    // }
     
     assert( (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1 );
     pMan->nPatLits += nPatLits;
@@ -448,6 +547,7 @@ void Cec_ManPatSavePattern_Pthread( Cec_ManPat_t *  pMan, Cec_ManSat_t *  p, Gia
     // save pattern
     Cec_ManPatStore( pMan, vPat );
     pMan->timeTotal += Abc_Clock() - clkTotal;
+    if(testing) printf("    leaving %d of Cec_ManPatSavePattern_Pthread\n\n", iThread);
 }
 
 

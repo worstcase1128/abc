@@ -1,0 +1,5 @@
+/data/ssd/ysun/github/abc/CMakeFiles/edit_cache.dir
+/data/ssd/ysun/github/abc/CMakeFiles/libabc-pic.dir
+/data/ssd/ysun/github/abc/CMakeFiles/libabc.dir
+/data/ssd/ysun/github/abc/CMakeFiles/rebuild_cache.dir
+/data/ssd/ysun/github/abc/CMakeFiles/abc.dir

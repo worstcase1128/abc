@@ -48,6 +48,11 @@ static inline void Cec_ObjSetSatNum( Cec_ManSat_t * p, Gia_Obj_t * pObj, int Num
 ***********************************************************************/
 int Cec_ObjSatVarValue( Cec_ManSat_t * p, Gia_Obj_t * pObj )             
 { 
+//     static inline int sat_solver_var_value( sat_solver* s, int v )
+// {
+//     assert( v >= 0 && v < s->size );
+//     return (int)(s->model[v] == l_True);
+// }
     return sat_solver_var_value( p->pSat, Cec_ObjSatNum(p, pObj) );
 }
 
@@ -487,12 +492,15 @@ int Cec_SetActivityFactors( Cec_ManSat_t * p, Gia_Obj_t * pObj )
   SeeAlso     []
 
 ***********************************************************************/
+// pObj = child0(co)
+// return 1 for UNSAT, 0 for SAT, -1 for UNDET
 int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 {
     // for testing **
     // Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatCheckNode()\n" );
     // printf("    >>> sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
     lbool testing = false;
+    // printf("call Cec_ManSatCheckNode at %p\n", p);
 
     Gia_Obj_t * pObjR = Gia_Regular(pObj);
     int nBTLimit = p->pPars->nBTLimit;
@@ -775,7 +783,6 @@ void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPar
         }
         Bar_ProgressUpdate( pProgress, i, "SAT..." );
 clk2 = Abc_Clock();
-        // return 1 for unsat; 0 for sat; -1 for undef
         // printf("ManSatSolve Gia_ObjChild0(pObj) %d\n", Gia_ObjId(pAig, Gia_ObjChild0(pObj)));
         // if(testing) printf("ManSatSolve pObj %d  Gia_ObjChild0(pObj) %d\n", Gia_ObjId(pAig, pObj), Gia_ObjId(pAig, Gia_ObjChild0(pObj)));
 
@@ -785,6 +792,7 @@ clk2 = Abc_Clock();
             Gia_ObjId(pAig, Gia_ObjChild0(pObj)), Gia_ObjId(pAig, Gia_ObjChild1(pObj)));
         // printf("obj is co?? %s\n", Gia_ObjIsCo(pObj)?"yes":"no");   // yes
         // printf("obj is and?? %s\n", Gia_ObjChild0(pObj) ?"yes":"no");   // yes
+        // return 1 for unsat; 0 for sat; -1 for undef
         status = Cec_ManSatCheckNode( p, Gia_ObjChild0(pObj) );
         if(testing) printf("sat status %d (%s)\n\n", status, status==1?"unsat":(status==0?"sat":"undef"));
         pObj->fMark0 = (status == 0);   // sat, disproved
@@ -1004,8 +1012,19 @@ clk2 = Abc_Clock();
     if ( pPat)
     {
         if(testing ) printf("    thread %d need lock\n", iThread);
-        pthread_mutex_lock(&mutex);
+        assert( pthread_mutex_lock(&mutex)==0 );
+        // pthread_mutex_lock(&mutex);
         if(testing ) printf("    thread %d using lock\n", iThread);
+
+// printf("\ncheck whether thread %d is really sat\n", iThread);
+// printf("child0 %c%d\n", Gia_ObjFaninC0(pObj)?'!':' ', Gia_ObjId(p->pAig, Gia_ObjFanin0(pObj)));
+// int value0 = Cec_ManPatPrintTFICNF(p, p->pAig, Gia_ObjFanin0(pObj));
+// if(!(value0^Gia_ObjFaninC0(pObj))){
+//     printf("assert failed at fanin0 %d, thread %d\n", Gia_ObjId(p->pAig, Gia_ObjFanin0(pObj)), iThread);
+//     exit(0);
+// }
+// assert( (value0^Gia_ObjFaninC0(pObj)) ==1);
+
         abctime clk3 = Abc_Clock();
         // if(! ((Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)) == 1))
         //     printf("assert1: %d %d %d\n", Gia_ObjFanin0(pObj)->fMark1, Gia_ObjFaninC0(pObj), (Gia_ObjFanin0(pObj)->fMark1 ^ Gia_ObjFaninC0(pObj)));
@@ -1014,7 +1033,9 @@ clk2 = Abc_Clock();
         Cec_ManPatSavePattern_Pthread( pPat, p, pObj, iThread);
         pPat->timeTotalSave += Abc_Clock() - clk3;
         if(testing ) printf("    thread %d free lock\n", iThread);
-        pthread_mutex_unlock(&mutex);
+// sleep(1);
+        assert( pthread_mutex_unlock(&mutex)==0 );
+        // pthread_mutex_unlock(&mutex);
     }
     // quit if one of them is solved
     if ( pPars->fCheckMiter ){
@@ -1032,6 +1053,7 @@ finalize:
     // pthread_mutex_unlock(&mutex);
     pThData->fWorking = 0;
     pthread_exit( NULL );
+    assert(0);
     // return NULL;
 }
 
@@ -1067,7 +1089,8 @@ void Cec_ManSatSolve_Pthread( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_
     Gia_ManLevelNum( pAig );
     Gia_ManIncrementTravId( pAig );
 
-    pthread_mutex_init(&mutex, NULL);
+    assert( pthread_mutex_init(&mutex, NULL)==0 );
+    // mutex = PTHREAD_MUTEX_INITIALIZER;
 
     Par_ThData_t ThData[PAR_THR_MAX];
     pthread_t WorkerThread[PAR_THR_MAX];
@@ -1103,6 +1126,7 @@ void Cec_ManSatSolve_Pthread( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_
         if(testing) printf("j=%d, i=%d\n", j,i);
         // TODO: use it incrementally
         ThData[i].p = Cec_ManSatCreate( pAig, pPars );
+        // printf("created %p\n", ThData[i].p);
         ThData[i].pObj = pObj;
         // ThData[i].pPat = pPat;
         // ThData[i].pAig = pAig;
@@ -1132,7 +1156,8 @@ void Cec_ManSatSolve_Pthread( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_
     //     Cec_ManSatPrintStats( p1 );
     //     Cec_ManSatPrintStats( p2 );
     // }
-    pthread_mutex_destroy(&mutex);
+    // pthread_mutex_destroy(&mutex);
+    // assert( pthread_mutex_destroy(&mutex)==0 );
     if(testing) printf("all done safely!!!\n");
     // pthread_exit(NULL);
 
@@ -1146,6 +1171,8 @@ void Cec_ManSatSolve_Pthread( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_
     for ( int k = 0; k < nProcs; k++ )
         if ( ThData[k].fWorking )
             k = -1;
+    assert( pthread_mutex_destroy(&mutex)==0 );
+    if(testing) printf("all done safely!!!\n");
     // sleep(1);
     return;
 }

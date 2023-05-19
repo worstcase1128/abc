@@ -196,6 +196,7 @@ extern void                 Cec_ManFraStop( Cec_ManFra_t * p );
 extern void                 Cec_ManTFIPrint( Gia_Man_t * pAig,  Gia_Obj_t * pObj );
 /*=== cecPat.c ============================================================*/
 extern void                 Cec_ManPatSavePattern( Cec_ManPat_t *  pPat, Cec_ManSat_t *  p, Gia_Obj_t * pObj );
+extern int                  Cec_ManPatPrintTFICNF( Cec_ManSat_t * pSat, Gia_Man_t * p, Gia_Obj_t * pObj );
 extern void                 Cec_ManPatSavePattern_Pthread( Cec_ManPat_t *  pPat, Cec_ManSat_t *  p, Gia_Obj_t * pObj , int thread);
 extern void                 Cec_ManPatSavePatternCSat( Cec_ManPat_t * pMan, Vec_Int_t * vPat );
 extern Vec_Ptr_t *          Cec_ManPatCollectPatterns( Cec_ManPat_t *  pMan, int nInputs, int nWords );

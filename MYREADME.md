@@ -24,6 +24,10 @@ multitheads:
 ` ./abc -c "&r logic_my_suite/voter.aig; &ps; &fraig -v -T 10; &ps" `
 ` ./abc -c "&r logic_my_suite/ctrl.aig; &ps; &fraig -v -T 10; &ps" `
 
+tips: try sin.aig and voter.aig, which work faster with multithreads
+or i2c.aig router.aig
+
+how to add -g in makefile optionally ??
 
 ## to visualize:
 use command `&show`, and then convert the .ps into .pdf

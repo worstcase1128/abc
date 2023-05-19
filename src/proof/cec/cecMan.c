@@ -293,27 +293,32 @@ void Cec_ManTFIPrint( Gia_Man_t * pAig,  Gia_Obj_t * pObj){
     Vec_Ptr_t * queue;
     Gia_Obj_t * pNode, *child0, *child1;
     int i, maxLength = 100;
-    Gia_Obj_t * pObjR = Gia_Regular(pObj);
+    // Gia_Obj_t * pObjR = Gia_Regular(pObj);
     printf("ManSatSolve pObj %d  Gia_ObjChild0(pObj) %d Gia_ObjChild1(pObj) %d\n", Gia_ObjId(pAig, pObj), Gia_ObjId(pAig, Gia_ObjChild0(pObj)), Gia_ObjId(pAig, Gia_ObjChild1(pObj)));
 
     queue = Vec_PtrAlloc( 100 );
-    printf(">>>> print the TFI of node %d (var)\n", Gia_ObjId(pAig, pObjR));
+    printf(">>>> print the TFI of node %d (var)\n", Gia_ObjId(pAig, pObj));
     // pNode =  Gia_ObjChild0(pObjR);
-    pNode =  pObjR;
+    // pNode =  pObjR;
+    pNode = pObj;
 
     // if ( Gia_ObjIsAnd(pNode) )
     Vec_PtrPush( queue, Gia_Regular(pNode) );
     // Vec_PtrPush( queue, pObj);
     for ( i = 0; (i < Vec_PtrSize(queue)) && i<maxLength && (((pNode) = (Gia_Obj_t *)Vec_PtrEntry(queue, i)), 1); i++ ){
-        if ( Gia_IsComplement(pNode) || Gia_ObjIsCi(pNode) ){
-            printf("stop here\n");
-        }
+        // if ( Gia_IsComplement(pNode) || Gia_ObjIsCi(pNode) ){
+        //     printf("stop here\n");
+        // }
 
-        child0 = Gia_Regular( Gia_ObjChild0(pNode));
-        child1 = Gia_Regular( Gia_ObjChild1(pNode));
+        // child0 = Gia_Regular( Gia_ObjChild0(pNode));
+        // child1 = Gia_Regular( Gia_ObjChild1(pNode));
+        child0 = Gia_ObjFanin0(pNode);
+        child1 = Gia_ObjFanin1(pNode);
         // printf("    type  %s <- %s %s\n", Gia_ObjType(pNode), Gia_ObjType(child0), Gia_ObjType(child1));
-        printf("    pObj %d (%s) <- child0 %d (%s) child1 %d (%s)\n", 
-            Gia_ObjId(pAig, pNode), Gia_ObjType(pNode), Gia_ObjId(pAig, child0), Gia_ObjType(child0), Gia_ObjId(pAig, child1), Gia_ObjType(child1));
+        printf("    pObj %d (%s) <- %c%d (%s) & %c%d (%s)\n", 
+            Gia_ObjId(pAig, pNode), Gia_ObjType(pNode), 
+            Gia_ObjFaninC0(pNode)?'!':' ', Gia_ObjId(pAig, child0), Gia_ObjType(child0), 
+            Gia_ObjFaninC1(pNode)?'!':' ', Gia_ObjId(pAig, child1), Gia_ObjType(child1));
         if ( Gia_ObjIsAnd(child0) )
             Vec_PtrPushUnique( queue, child0 );
         if ( Gia_ObjIsAnd(child1) )
