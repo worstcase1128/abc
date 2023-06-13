@@ -128,6 +128,7 @@ int Gia_ManLutSizeMax( Gia_Man_t * p )
 {
     int i, nSizeMax = -1;
     Gia_ManForEachLut( p, i )
+    // for ( i = 1; i < Gia_ManObjNum(p); i++ ) if ( !Gia_ObjIsLut(p, i) ) {} else
         nSizeMax = Abc_MaxInt( nSizeMax, Gia_ObjLutSize(p, i) );
     return nSizeMax;
 }
@@ -480,6 +481,7 @@ void Gia_ManPrintMappingStats( Gia_Man_t * p, char * pDumpFile )
         return;
     pLevels = ABC_CALLOC( int, Gia_ManObjNum(p) );
     Gia_ManForEachLut( p, i )
+    // for ( i = 1; i < Gia_ManObjNum(p); i++ ) if ( !Gia_ObjIsLut(p, i) ) {} else
     {
         if ( Gia_ObjLutIsMux(p, i) && !(fDisable2Lut && Gia_ObjLutSize(p, i) == 2) )
         {
@@ -970,6 +972,7 @@ int Gia_ManFromIfAig_rec( Gia_Man_t * pNew, If_Man_t * pIfMan, If_Obj_t * pIfObj
 Gia_Man_t * Gia_ManFromIfAig( If_Man_t * pIfMan )
 {
     int fHash = 0;
+    int printLog = 0;
     Gia_Man_t * pNew, * pTemp;
     If_Obj_t * pIfObj, * pIfLeaf;
     If_Cut_t * pCutBest;
@@ -990,6 +993,7 @@ Gia_Man_t * Gia_ManFromIfAig( If_Man_t * pIfMan )
     {
         if ( pIfObj->nRefs == 0 && !If_ObjIsTerm(pIfObj) )
             continue;
+if(printLog)    printf("i: %d ref: %d\n", i, pIfObj->nRefs);
         if ( If_ObjIsAnd(pIfObj) )
         {
             pCutBest = If_ObjCutBest( pIfObj );
@@ -1001,6 +1005,7 @@ Gia_Man_t * Gia_ManFromIfAig( If_Man_t * pIfMan )
 //            }
             // collect leaves of the best cut
             Vec_IntClear( vLeaves );
+            // convert the leaves to the new aig
             If_CutForEachLeaf( pIfMan, pCutBest, pIfLeaf, k )
                 Vec_IntPush( vLeaves, pIfLeaf->iCopy );
             // get the functionality
@@ -1016,8 +1021,9 @@ Gia_Man_t * Gia_ManFromIfAig( If_Man_t * pIfMan )
             pIfObj->iCopy = Gia_ManAppendCi(pNew);
         else if ( If_ObjIsCo(pIfObj) )
             pIfObj->iCopy = Gia_ManAppendCo( pNew, Abc_LitNotCond(If_ObjFanin0(pIfObj)->iCopy, If_ObjFaninC0(pIfObj)) );
-        else if ( If_ObjIsConst1(pIfObj) )
+        else if ( If_ObjIsConst1(pIfObj) ){
             pIfObj->iCopy = 1;
+        }
         else assert( 0 );
     }
     Vec_IntFree( vAig );
@@ -1880,6 +1886,7 @@ Gia_Man_t * Gia_ManFromIfLogic( If_Man_t * pIfMan )
     vLeaves  = Vec_IntAlloc( 16 );
     vLeaves2 = Vec_IntAlloc( 16 );
     If_ManCleanCutData( pIfMan );
+    int test_num=0;
     If_ManForEachObj( pIfMan, pIfObj, i )
     {
         if ( pIfObj->nRefs == 0 && !If_ObjIsTerm(pIfObj) )
@@ -1908,24 +1915,6 @@ Gia_Man_t * Gia_ManFromIfLogic( If_Man_t * pIfMan )
                     pIfObj->iCopy = Gia_ManFromIfLogicCreateLut( pNew, If_CutTruthW(pIfMan, pCutBest), vLeaves, vCover, vMapping, vMapping2 );
                 pIfObj->iCopy = Abc_LitNotCond( pIfObj->iCopy, pCutBest->fCompl );
             }
-/*
-            else if ( pIfMan->pPars->fUseDsd && pIfMan->pPars->fUseDsdTune && pIfMan->pPars->fDeriveLuts )
-            {
-                if ( pNtkCell == NULL )
-                {
-                    assert( If_DsdManGetCellStr(pIfMan->pIfDsdMan) != NULL );
-                    pNtkCell = Ifn_NtkParse( If_DsdManGetCellStr(pIfMan->pIfDsdMan) );
-                    nLutMax = Ifn_NtkLutSizeMax( pNtkCell );
-                    pHashed = Gia_ManStart( 10000 );
-                    Vec_IntFillExtra( &pHashed->vCopies, 10000, -1 );
-                    for ( k = 0; k < pIfMan->pPars->nLutSize; k++ )
-                        Gia_ManAppendCi( pHashed );
-                    Gia_ManHashAlloc( pHashed );
-                }
-                pIfObj->iCopy = Gia_ManFromIfLogicFindCell( pIfMan, pNew, pHashed, pCutBest, pNtkCell, nLutMax, vLeaves, vLits, vCover, vMapping, vMapping2, vConfigs );
-                pIfObj->iCopy = Abc_LitNotCond( pIfObj->iCopy, pCutBest->fCompl );
-            }
-*/
             else if ( pIfMan->pPars->fUseAndVars && pIfMan->pPars->fUseCofVars && pIfMan->pPars->fDeriveLuts && (int)pCutBest->nLeaves > pIfMan->pPars->nLutSize/2 )
             {
                 int truthId = Abc_Lit2Var(pCutBest->iCutFunc);
@@ -1957,8 +1946,11 @@ Gia_Man_t * Gia_ManFromIfLogic( If_Man_t * pIfMan )
                     Gia_ManFromIfGetConfig( vConfigs, pIfMan, pCutBest, pIfObj->iCopy, vConfigsStr );
             }
             else
-            {
+            {   // default
+                int old_num = Gia_ManObjNum(pNew);
                 pIfObj->iCopy = Gia_ManNodeIfToGia( pNew, pIfMan, pIfObj, vLeaves, 0 );
+                // if(Gia_ManObjNum(pNew)-old_num!=2)
+                    test_num += Gia_ManObjNum(pNew) - old_num -1;
                 // write mapping
                 Vec_IntSetEntry( vMapping, Abc_Lit2Var(pIfObj->iCopy), Vec_IntSize(vMapping2) );
                 Vec_IntPush( vMapping2, Vec_IntSize(vLeaves) );
@@ -1968,7 +1960,7 @@ Gia_Man_t * Gia_ManFromIfLogic( If_Man_t * pIfMan )
                     Vec_IntPush( vMapping2, Abc_Lit2Var(Entry)  );
                 Vec_IntPush( vMapping2, Abc_Lit2Var(pIfObj->iCopy) );
             }
-        }
+        }   // if ( If_ObjIsAnd(pIfObj) )
         else if ( If_ObjIsCi(pIfObj) )
             pIfObj->iCopy = Gia_ManAppendCi(pNew);
         else if ( If_ObjIsCo(pIfObj) )
@@ -1993,6 +1985,7 @@ Gia_Man_t * Gia_ManFromIfLogic( If_Man_t * pIfMan )
         sat_solver_delete(pSat);
     if ( pHashed )
         Gia_ManStop( pHashed );
+    printf("expand %d\n", test_num);
 //    printf( "Mapping array size:  IfMan = %d. Gia = %d. Increase = %.2f\n", 
 //        If_ManObjNum(pIfMan), Gia_ManObjNum(pNew), 1.0 * Gia_ManObjNum(pNew) / If_ManObjNum(pIfMan) );
     // finish mapping 
@@ -2456,7 +2449,7 @@ Gia_Man_t * Gia_ManPerformMapping( Gia_Man_t * p, void * pp )
         assert( Gia_ManIsNormalized(pNew) );
     }
     else 
-    {
+    {   // by default
         pNew = Gia_ManPerformMappingInt( p, (If_Par_t *)pp );
         Gia_ManTransferTiming( pNew, p );
         if ( ((If_Par_t *)pp)->fHashMapping )

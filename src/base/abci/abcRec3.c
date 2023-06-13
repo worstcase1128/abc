@@ -900,6 +900,9 @@ static inline int If_CutComputeDelay( If_Man_t * p, If_Cut_t * pCut, char * pCan
     }
     return delayMax;
 }
+
+// return the delay of best cut
+// int If_CutFindBestStruct( If_Man_t * pIfMan, If_Cut_t * pCut, char * pCanonPerm, unsigned * puCanonPhase, int * pBestPo )
 static inline int If_CutFindBestStruct( If_Man_t * pIfMan, If_Cut_t * pCut, char * pCanonPerm, unsigned * puCanonPhase, int * pBestPo )
 {
     Lms_Man_t * p = s_pMan3;
@@ -1102,6 +1105,36 @@ Hop_Obj_t * Abc_RecToHop3( Hop_Man_t * pMan, If_Man_t * pIfMan, If_Cut_t * pCut,
   SeeAlso     []
 
 ***********************************************************************/
+int getInternalNode( If_Man_t * pIfMan, If_Obj_t * pObj, If_Cut_t * pCut, int * pBestPo ){
+    Lms_Man_t * p = s_pMan3;
+    char pCanonPerm[LMS_VAR_MAX];
+    unsigned uCanonPhase = 0;
+    Gia_Man_t * pGia = p->pGia;
+    Gia_Obj_t * pGiaPo, * pGiaTemp = NULL;
+
+    int i, BestPo = -1;
+
+    // get the best output for this node
+    If_CutFindBestStruct( pIfMan, pCut, pCanonPerm, &uCanonPhase, &BestPo );
+    assert( BestPo >= 0 );
+    pGiaPo = Gia_ManCo( pGia, BestPo );
+// printf("bestPo: %d\n", BestPo);
+    // collect internal nodes into pGia->vTtNodes
+    if ( pGia->vTtNodes == NULL )
+        pGia->vTtNodes = Vec_IntAlloc( 256 );
+    assert( Gia_ObjIsAnd( Gia_ObjFanin0(pGiaPo) ) );
+    Gia_ObjCollectInternal( pGia, Gia_ObjFanin0(pGiaPo) );
+    assert( Vec_IntSize(pGia->vTtNodes) > 0 );
+// printf("intSize : %d\n",  Vec_IntSize(pGia->vTtNodes));
+    *pBestPo = BestPo;
+    Gia_ManForEachObjVec( pGia->vTtNodes, pGia, pGiaTemp, i )
+        pGiaTemp->fMark0 = 0;
+    return Vec_IntSize(pGia->vTtNodes);
+
+}
+
+
+
 int Abc_RecToGia3( Gia_Man_t * pMan, If_Man_t * pIfMan, If_Cut_t * pCut, Vec_Int_t * vLeaves, int fHash )
 {
     Lms_Man_t * p = s_pMan3;
@@ -1113,6 +1146,7 @@ int Abc_RecToGia3( Gia_Man_t * pMan, If_Man_t * pIfMan, If_Cut_t * pCut, Vec_Int
     int i, uSupport, BestPo = -1, nLeaves = If_CutLeaveNum(pCut);
     assert( pIfMan->pPars->fCutMin == 1 );
     assert( nLeaves == Vec_IntSize(vLeaves) );
+    int printLog = 0;
 
     // compute support
     uSupport = Abc_TtSupport( If_CutTruthW(pIfMan, pCut), nLeaves );
@@ -1129,7 +1163,7 @@ int Abc_RecToGia3( Gia_Man_t * pMan, If_Man_t * pIfMan, If_Cut_t * pCut, Vec_Int
     If_CutFindBestStruct( pIfMan, pCut, pCanonPerm, &uCanonPhase, &BestPo );
     assert( BestPo >= 0 );
     pGiaPo = Gia_ManCo( pGia, BestPo );
-
+if(printLog)    printf("    begin collect internal nodes bestPo: %d\n", BestPo);
     // collect internal nodes into pGia->vTtNodes
     if ( pGia->vTtNodes == NULL )
         pGia->vTtNodes = Vec_IntAlloc( 256 );
@@ -1139,29 +1173,41 @@ int Abc_RecToGia3( Gia_Man_t * pMan, If_Man_t * pIfMan, If_Cut_t * pCut, Vec_Int
 
     // collect GIA nodes for leaves
     Vec_IntClear( p->vLabels );
-    for (i = 0; i < nLeaves; i++)
+if(printLog)    printf("    label: ");
+    for (i = 0; i < nLeaves; i++){
         Vec_IntPush( p->vLabels, Abc_LitNotCond(Vec_IntEntry(vLeaves, pCanonPerm[i]), (uCanonPhase >> i) & 1) );
-
+if(printLog)    printf("(%d %d %d %d) ", Vec_IntEntry(vLeaves, i), pCanonPerm[i], Vec_IntEntry(vLeaves, pCanonPerm[i]), ((uCanonPhase >> i) & 1) );
+    }
+if(printLog)    printf("\n");
+// printf("interNode size: %d\n", Vec_IntSize(pGia->vTtNodes));
     // compute HOP nodes for internal nodes
     Gia_ManForEachObjVec( pGia->vTtNodes, pGia, pGiaTemp, i )
+    // for ( i = 0; (i < Vec_IntSize(pGia->vTtNodes)) && ((pGiaTemp) = Gia_ManObj(pGia, Vec_IntEntry(pGia->vTtNodes,i))); i++ )
     {
         pGiaTemp->fMark0 = 0; // unmark node marked by Gia_ObjCollectInternal()
+if(printLog)    printf("        interId: %d\n", Gia_ObjId( pGia, pGiaTemp));
         if ( Gia_ObjIsAnd(Gia_ObjFanin0(pGiaTemp)) )
             iFan0 = Vec_IntEntry(p->vLabels, Gia_ObjNum(pGia, Gia_ObjFanin0(pGiaTemp)) + nLeaves);
-        else
+        else{
             iFan0 = Vec_IntEntry(p->vLabels, Gia_ObjCioId(Gia_ObjFanin0(pGiaTemp)));
+// printf("Gia_ObjCioId0 %d\n", Gia_ObjCioId(Gia_ObjFanin0(pGiaTemp)));
+        }
         iFan0 = Abc_LitNotCond(iFan0, Gia_ObjFaninC0(pGiaTemp));
         if ( Gia_ObjIsAnd(Gia_ObjFanin1(pGiaTemp)) )
             iFan1 = Vec_IntEntry(p->vLabels, Gia_ObjNum(pGia, Gia_ObjFanin1(pGiaTemp)) + nLeaves);
-        else
+        else{
             iFan1 = Vec_IntEntry(p->vLabels, Gia_ObjCioId(Gia_ObjFanin1(pGiaTemp)));
+// printf("Gia_ObjCioId1 %d\n", Gia_ObjCioId(Gia_ObjFanin1(pGiaTemp)));
+        }
         iFan1 = Abc_LitNotCond(iFan1, Gia_ObjFaninC1(pGiaTemp));
+if(printLog)    printf("            iFan0: %d, iFan1: %d\n", iFan0, iFan1);
         if ( fHash )
             iGiaObj = Gia_ManHashAnd(pMan, iFan0, iFan1);
-        else
+        else    // fHash is 0 by default
             iGiaObj = Gia_ManAppendAnd(pMan, iFan0, iFan1);
         Vec_IntPush(p->vLabels, iGiaObj);
     }
+if(printLog)    printf("    nObjs: %d\n", pMan->nObjs);
     // get the final result
     assert( Gia_ObjIsAnd(pGiaTemp) );
     iGiaObj = Vec_IntEntry(p->vLabels, Gia_ObjNum(pGia, pGiaTemp) + nLeaves);

@@ -1,0 +1,2 @@
+# bear make ABC_USE_NO_READLINE=1 -j20
+make ABC_USE_NO_READLINE=1 -j20

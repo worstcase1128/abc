@@ -40122,7 +40122,6 @@ int Abc_CommandAbc9If( Abc_Frame_t * pAbc, int argc, char ** argv )
             return 0;
         }
     }
-
     // complain if truth tables are requested but the cut size is too large
     if ( pPars->fTruth && pPars->nLutSize > IF_MAX_FUNC_LUTSIZE )
     {

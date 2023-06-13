@@ -452,7 +452,7 @@ word * Gia_ObjComputeTruthTable( Gia_Man_t * p, Gia_Obj_t * pObj )
     if ( p->vTtMemory == NULL )
     {
         p->nTtVars   = Gia_ManPiNum( p );
-        p->nTtWords  = Abc_Truth6WordNum( p->nTtVars );
+        p->nTtWords  = Abc_Truth6WordNum( p->nTtVars ); // =1 if nTtVars=6
         p->vTtNums   = Vec_IntStart( Gia_ManObjNum(p) + 1000 );
         p->vTtNodes  = Vec_IntAlloc( 256 );
         p->vTtInputs = Vec_PtrAllocTruthTables( Abc_MaxInt(6, p->nTtVars) );
@@ -474,6 +474,8 @@ word * Gia_ObjComputeTruthTable( Gia_Man_t * p, Gia_Obj_t * pObj )
     if ( Vec_WrdSize(p->vTtMemory) < p->nTtWords * (Vec_IntSize(p->vTtNodes) + 2) )
         Vec_WrdFillExtra( p->vTtMemory, p->nTtWords * (Vec_IntSize(p->vTtNodes) + 2), 0 );
     // compute the truth table for internal nodes
+    // traverse in topological order
+    // vTtNodes is the TFI of pRoot
     Gia_ManForEachObjVec( p->vTtNodes, p, pTemp, i )
     {
         pTemp->fMark0 = 0; // unmark nodes marked by Gia_ObjCollectInternal()
@@ -509,6 +511,8 @@ word * Gia_ObjComputeTruthTable( Gia_Man_t * p, Gia_Obj_t * pObj )
         pTruth = Gla_ObjTruthNode( p, pRoot );
     else
         pTruth = NULL;
+    // Gia_Man_t * p, word * pDst, word * pSrc, int c
+    // flip pSrc[w] if c
     return Gla_ObjTruthDup( p, Gla_ObjTruthFree2(p), pTruth, Gia_ObjIsCo(pObj) && Gia_ObjFaninC0(pObj) );
 }
 

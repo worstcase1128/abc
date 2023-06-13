@@ -137,10 +137,11 @@ int If_ManPerformMappingComb( If_Man_t * p )
         If_ManPerformMappingRound( p, p->pPars->nCutsMax, 0, 0, 1, "Delay" );
 
     // try to improve area by expanding and reducing the cuts
+    // yes by default, no if fUserRecLib
     if ( p->pPars->fExpRed )
         If_ManImproveMapping( p );
 
-    // area flow oriented mapping
+    // area flow oriented mapping, 1 by default
     for ( i = 0; i < p->pPars->nFlowIters; i++ )
     {
         If_ManPerformMappingRound( p, p->pPars->nCutsMax, 1, 0, 0, "Flow" );
@@ -148,7 +149,7 @@ int If_ManPerformMappingComb( If_Man_t * p )
             If_ManImproveMapping( p );
     }
 
-    // area oriented mapping
+    // area oriented mapping, 2 by default
     for ( i = 0; i < p->pPars->nAreaIters; i++ )
     {
         If_ManPerformMappingRound( p, p->pPars->nCutsMax, 2, 0, 0, "Area" );

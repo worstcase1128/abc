@@ -228,7 +228,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         if ( !fPreprocess || pCut->nLeaves <= 1 )
             If_CutCopy( p, pCutSet->ppCuts[pCutSet->nCuts++], pCut );
     }   // if ( !fFirst )
-
+// printf("cuts of nodeId: %d \n", pObj->Id);
     // generate cuts
     If_ObjForEachCut( pObj->pFanin0, pCut0, i )
     If_ObjForEachCut( pObj->pFanin1, pCut1, k )
@@ -368,7 +368,8 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
                     pCut->fUseless = 1;
             }
             else 
-            {
+            {// default here
+                // none of the two if functions below would run by default
                 if ( p->pPars->fUseAndVars )
                 {
                     int iDecMask = -1, truthId = Abc_Lit2Var(pCut->iCutFunc);
@@ -455,12 +456,11 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
             pCut->Power = (Mode == 2)? If_CutPowerDerefed( p, pCut, pObj ) : If_CutPowerFlow( p, pCut, pObj );
 //        pCut->AveRefs = (Mode == 0)? (float)0.0 : If_CutAverageRefs( p, pCut );
         // insert the cut into storage
+// printf("(%.2f %.2f %.2f %d) ", pCut->Delay, pCut->Area, pCut->Edge, pCut->iCutFunc);
         If_CutSort( p, pCutSet, pCut );
-//        If_CutTraverse( p, pObj, pCut );
     }   // traverse all cuts combinations of two fanins
     assert( pCutSet->nCuts > 0 );
-//    If_CutVerifyCuts( pCutSet, !p->pPars->fUseTtPerm );
-
+// printf("\n");
     // update the best cut
     if ( !fPreprocess || pCutSet->ppCuts[0]->Delay <= pObj->Required + p->fEpsilon )
     {
@@ -588,6 +588,7 @@ void If_ObjPerformMappingChoice( If_Man_t * p, If_Obj_t * pObj, int Mode, int fP
   SeeAlso     []
 
 ***********************************************************************/
+extern int getInternalNode( If_Man_t * pIfMan, If_Obj_t * pObj, If_Cut_t * pCut, int * pBestPo);
 int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPreprocess, int fFirst, char * pLabel )
 {
     ProgressBar * pProgress = NULL;
@@ -645,6 +646,7 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
     }
     else
     {
+        // default here
         pProgress = Extra_ProgressBarStart( stdout, If_ManObjNum(p) );
         If_ManForEachNode( p, pObj, i )
         {
@@ -667,12 +669,35 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
         Abc_Print( 1, "%c:  Del = %7.2f.  Ar = %9.1f.  Edge = %8d.  ", 
             Symb, p->RequiredGlo, p->AreaGlo, p->nNets );
         if ( p->dPower )
-        Abc_Print( 1, "Switch = %7.2f.  ", p->dPower );
+            Abc_Print( 1, "Switch = %7.2f.  ", p->dPower );
         Abc_Print( 1, "Cut = %8d.  ", p->nCutsMerged );
         Abc_PrintTime( 1, "T", Abc_Clock() - clk );
 //    Abc_Print( 1, "Max number of cuts = %d. Average number of cuts = %5.2f.\n", 
 //        p->nCutsMax, 1.0 * p->nCutsMerged / If_ManAndNum(p) );
     }
+
+    int printBestStructure = 1;
+    if(printBestStructure){
+        printf("printBestStructure\n");
+        If_Obj_t * pIfObj;
+        If_Cut_t * pCutBest;
+        int total_area=0;
+        If_ManForEachNode( p, pIfObj, i )
+        {
+            if ( pIfObj->nRefs == 0 && !If_ObjIsTerm(pIfObj) )
+                continue;
+            if ( If_ObjIsAnd(pIfObj) ){
+                int BestPo = -1;
+                pCutBest = If_ObjCutBest( pIfObj );
+                int s = getInternalNode(p, pIfObj, pCutBest, &BestPo);
+                printf("(%d %d %d) ", i, BestPo, s);
+                total_area += s;
+            }
+        }
+        printf("\narea upper_bound: %d\n", total_area);
+    }
+
+
     return 1;
 }
 

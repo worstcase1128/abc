@@ -1528,11 +1528,12 @@ int Cec4_ManSolveTwo( Cec4_Man_t * p, int iObj0, int iObj1, int fPhase, int * pf
     if ( !iObj0 && Cec4_ObjSatId(p->pNew, Gia_ManConst0(p->pNew)) == -1 )
         Cec4_ObjSetSatId( p->pNew, Gia_ManConst0(p->pNew), sat_solver_addvar(p->pSat) );
     clk = Abc_Clock();
+    // add the TFI of iObjs0 and iObj1 to sat solver(var2NodeData)
     iVar0 = Cec4_ObjGetCnfVar( p, iObj0 );
     iVar1 = Cec4_ObjGetCnfVar( p, iObj1 );
     if( p->pPars->jType > 0 )
     {
-        sat_solver_start_new_round( p->pSat );
+        sat_solver_start_new_round( p->pSat );  // travId ++ 
         sat_solver_mark_cone( p->pSat, Cec4_ObjSatId(p->pNew, Gia_ManObj(p->pNew, iObj0)) );
         sat_solver_mark_cone( p->pSat, Cec4_ObjSatId(p->pNew, Gia_ManObj(p->pNew, iObj1)) );
     }

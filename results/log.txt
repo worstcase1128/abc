@@ -1,0 +1,7 @@
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/hyp_8xd.aig; &ps; time; &fraig -x; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/hyp_8xd[0m : i/o =  65536/  32768  [1;36mand =54869760[0m  [1;35mlev =24801[0m [1;35m(8704.14)[0m  mem =629.44 MB
+elapse: 22.48 seconds, total: 22.48 seconds
+elapse: 107.81 seconds, total: 130.30 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/hyp_8xd[0m : i/o =  65536/  32768  [1;36mand =54862336[0m  [1;35mlev =24800[0m [1;35m(8703.14)[0m  mem =629.35 MB
+

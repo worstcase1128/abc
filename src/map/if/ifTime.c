@@ -152,7 +152,7 @@ float If_CutDelay( If_Man_t * p, If_Obj_t * pObj, If_Cut_t * pCut )
                 }
             }
             else
-            {
+            {   // default here
                 If_CutForEachLeaf( p, pCut, pLeaf, i )
                 {
                     DelayCur = If_ObjCutBest(pLeaf)->Delay + 1.0;
@@ -315,6 +315,7 @@ void If_ManComputeRequired( If_Man_t * p )
     If_ManMarkMapping( p );
     if ( p->pManTim == NULL )
     {
+        // default here
         // get the global required times
         p->RequiredGlo = If_ManDelayMax( p, 0 );
 
@@ -343,6 +344,7 @@ void If_ManComputeRequired( If_Man_t * p )
         }
         else
         {
+            // default here
             // find new delay target
             if ( p->pPars->nRelaxRatio && p->pPars->DelayTargetNew == 0 )
                 p->pPars->DelayTargetNew = p->RequiredGlo * (100.0 + p->pPars->nRelaxRatio) / 100.0; 

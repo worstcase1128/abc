@@ -54,3 +54,18 @@ Running the demo program by running the binary in the command-line mode:
 
 ## In order to generate my own .aig, 
 ` ./abc -c "read reconv.eqn; strash; &get; &w test.aig" `
+
+# About If
+logic_my_suite/rec6Lib_final_filtered3_recanon.aig
+
+` ./abc -c "read logic_my_suite/mem_ctrl.aig; rec_start3 logic_my_suite/rec6Lib_final_filtered3_recanon.aig; print_stats; if -K 6 -y; print_stats" `
+
+` ./abc -c "read logic_my_suite/mem_ctrl.aig; print_stats; if -K 6; print_stats" `
+
+` ./abc_pure -c "&r logic_my_suite/mem_ctrl.aig; &ps; rec_start3 logic_my_suite/rec6Lib_final_filtered3_recanon.aig; &if -K 6 -y; &ps" `
+
+` ./abc_pure -c "&r logic_my_suite/mem_ctrl.aig; &ps; &if -K 6 ; &ps" `
+
+` ./abc_pure -c "&r logic_my_suite/ctrl.aig; &ps; rec_start3 logic_my_suite/rec6Lib_final_filtered3_recanon.aig; &if -K 6 -y; &ps"  `
+
+./abc -c "&r logic_my_suite/ctrl.aig; &ps; rec_start3 logic_my_suite/rec6Lib_final_filtered3_recanon.aig; &if -K 6 -y; &ps"

@@ -1,0 +1,266 @@
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/arbiter.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/arbiter[0m : i/o =    256/    129  [1;36mand =   11839[0m  [1;35mlev =   87[0m [1;35m(86.38)[0m  mem = 0.15 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 4.90 seconds, total: 4.90 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/arbiter[0m : i/o =    256/    129  [1;36mand =   11839[0m  [1;35mlev =   87[0m [1;35m(86.38)[0m  mem = 0.15 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/arbiter.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/arbiter[0m : i/o =    256/    129  [1;36mand =   11839[0m  [1;35mlev =   87[0m [1;35m(86.38)[0m  mem = 0.15 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.56 seconds, total: 0.56 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/arbiter[0m : i/o =    256/    129  [1;36mand =   11839[0m  [1;35mlev =   87[0m [1;35m(86.38)[0m  mem = 0.15 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/ctrl.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/ctrl[0m : i/o =      7/     26  [1;36mand =     174[0m  [1;35mlev =   10[0m [1;35m(7.23)[0m  mem = 0.00 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/ctrl[0m : i/o =      7/     26  [1;36mand =     169[0m  [1;35mlev =   10[0m [1;35m(7.08)[0m  mem = 0.00 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/ctrl.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/ctrl[0m : i/o =      7/     26  [1;36mand =     174[0m  [1;35mlev =   10[0m [1;35m(7.23)[0m  mem = 0.00 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/ctrl[0m : i/o =      7/     26  [1;36mand =     169[0m  [1;35mlev =   10[0m [1;35m(7.08)[0m  mem = 0.00 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/cavlc.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/cavlc[0m : i/o =     10/     11  [1;36mand =     693[0m  [1;35mlev =   16[0m [1;35m(12.91)[0m  mem = 0.01 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/cavlc[0m : i/o =     10/     11  [1;36mand =     690[0m  [1;35mlev =   16[0m [1;35m(12.91)[0m  mem = 0.01 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/cavlc.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/cavlc[0m : i/o =     10/     11  [1;36mand =     693[0m  [1;35mlev =   16[0m [1;35m(12.91)[0m  mem = 0.01 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/cavlc[0m : i/o =     10/     11  [1;36mand =     690[0m  [1;35mlev =   16[0m [1;35m(12.91)[0m  mem = 0.01 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/dec.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/dec[0m : i/o =      8/    256  [1;36mand =     304[0m  [1;35mlev =    3[0m [1;35m(3.00)[0m  mem = 0.01 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/dec[0m : i/o =      8/    256  [1;36mand =     304[0m  [1;35mlev =    3[0m [1;35m(3.00)[0m  mem = 0.01 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/dec.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/dec[0m : i/o =      8/    256  [1;36mand =     304[0m  [1;35mlev =    3[0m [1;35m(3.00)[0m  mem = 0.01 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/dec[0m : i/o =      8/    256  [1;36mand =     304[0m  [1;35mlev =    3[0m [1;35m(3.00)[0m  mem = 0.01 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/i2c.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/i2c[0m : i/o =    147/    142  [1;36mand =    1342[0m  [1;35mlev =   20[0m [1;35m(6.58)[0m  mem = 0.02 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.01 seconds, total: 0.02 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/i2c[0m : i/o =    147/    142  [1;36mand =    1321[0m  [1;35mlev =   20[0m [1;35m(6.58)[0m  mem = 0.02 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/i2c.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/i2c[0m : i/o =    147/    142  [1;36mand =    1342[0m  [1;35mlev =   20[0m [1;35m(6.58)[0m  mem = 0.02 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.01 seconds, total: 0.01 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/i2c[0m : i/o =    147/    142  [1;36mand =    1321[0m  [1;35mlev =   20[0m [1;35m(6.58)[0m  mem = 0.02 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/int2float.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/int2float[0m : i/o =     11/      7  [1;36mand =     260[0m  [1;35mlev =   16[0m [1;35m(10.57)[0m  mem = 0.00 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/int2float[0m : i/o =     11/      7  [1;36mand =     258[0m  [1;35mlev =   16[0m [1;35m(10.57)[0m  mem = 0.00 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/int2float.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/int2float[0m : i/o =     11/      7  [1;36mand =     260[0m  [1;35mlev =   16[0m [1;35m(10.57)[0m  mem = 0.00 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/int2float[0m : i/o =     11/      7  [1;36mand =     258[0m  [1;35mlev =   16[0m [1;35m(10.57)[0m  mem = 0.00 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/mem_ctrl.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/mem_ctrl[0m : i/o =   1204/   1231  [1;36mand =   46836[0m  [1;35mlev =  114[0m [1;35m(18.34)[0m  mem = 0.59 MB
+elapse: 0.01 seconds, total: 0.01 seconds
+elapse: 3.66 seconds, total: 3.67 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/mem_ctrl[0m : i/o =   1204/   1231  [1;36mand =   46718[0m  [1;35mlev =  115[0m [1;35m(18.42)[0m  mem = 0.59 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/mem_ctrl.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/mem_ctrl[0m : i/o =   1204/   1231  [1;36mand =   46836[0m  [1;35mlev =  114[0m [1;35m(18.34)[0m  mem = 0.59 MB
+elapse: 0.01 seconds, total: 0.01 seconds
+elapse: 4.05 seconds, total: 4.06 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/mem_ctrl[0m : i/o =   1204/   1231  [1;36mand =   46718[0m  [1;35mlev =  115[0m [1;35m(18.42)[0m  mem = 0.59 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/priority.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/priority[0m : i/o =    128/      8  [1;36mand =     978[0m  [1;35mlev =  250[0m [1;35m(73.50)[0m  mem = 0.02 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.30 seconds, total: 0.30 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/priority[0m : i/o =    128/      8  [1;36mand =     978[0m  [1;35mlev =  250[0m [1;35m(73.50)[0m  mem = 0.02 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/priority.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/priority[0m : i/o =    128/      8  [1;36mand =     978[0m  [1;35mlev =  250[0m [1;35m(73.50)[0m  mem = 0.02 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.08 seconds, total: 0.08 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/priority[0m : i/o =    128/      8  [1;36mand =     978[0m  [1;35mlev =  250[0m [1;35m(73.50)[0m  mem = 0.02 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/router.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/router[0m : i/o =     60/     30  [1;36mand =     257[0m  [1;35mlev =   54[0m [1;35m(5.30)[0m  mem = 0.01 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.03 seconds, total: 0.03 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/router[0m : i/o =     60/     30  [1;36mand =     257[0m  [1;35mlev =   54[0m [1;35m(5.30)[0m  mem = 0.01 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/router.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/router[0m : i/o =     60/     30  [1;36mand =     257[0m  [1;35mlev =   54[0m [1;35m(5.30)[0m  mem = 0.01 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/router[0m : i/o =     60/     30  [1;36mand =     257[0m  [1;35mlev =   54[0m [1;35m(5.30)[0m  mem = 0.01 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/voter.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/voter[0m : i/o =   1001/      1  [1;36mand =   13758[0m  [1;35mlev =   70[0m [1;35m(70.00)[0m  mem = 0.18 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 3.94 seconds, total: 3.95 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/voter[0m : i/o =   1001/      1  [1;36mand =   11925[0m  [1;35mlev =   65[0m [1;35m(65.00)[0m  mem = 0.16 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/voter.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/voter[0m : i/o =   1001/      1  [1;36mand =   13758[0m  [1;35mlev =   70[0m [1;35m(70.00)[0m  mem = 0.18 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 33.89 seconds, total: 33.89 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/voter[0m : i/o =   1001/      1  [1;36mand =   11988[0m  [1;35mlev =   69[0m [1;35m(69.00)[0m  mem = 0.16 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/adder.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/adder[0m : i/o =    256/    129  [1;36mand =    1020[0m  [1;35mlev =  255[0m [1;35m(129.00)[0m  mem = 0.02 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/adder[0m : i/o =    256/    129  [1;36mand =    1020[0m  [1;35mlev =  255[0m [1;35m(129.00)[0m  mem = 0.02 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/adder.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/adder[0m : i/o =    256/    129  [1;36mand =    1020[0m  [1;35mlev =  255[0m [1;35m(129.00)[0m  mem = 0.02 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/adder[0m : i/o =    256/    129  [1;36mand =    1020[0m  [1;35mlev =  255[0m [1;35m(129.00)[0m  mem = 0.02 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/bar.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/bar[0m : i/o =    135/    128  [1;36mand =    3336[0m  [1;35mlev =   12[0m [1;35m(12.00)[0m  mem = 0.05 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/bar[0m : i/o =    135/    128  [1;36mand =    3336[0m  [1;35mlev =   12[0m [1;35m(12.00)[0m  mem = 0.05 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/bar.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/bar[0m : i/o =    135/    128  [1;36mand =    3336[0m  [1;35mlev =   12[0m [1;35m(12.00)[0m  mem = 0.05 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/bar[0m : i/o =    135/    128  [1;36mand =    3336[0m  [1;35mlev =   12[0m [1;35m(12.00)[0m  mem = 0.05 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/div.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/div[0m : i/o =    128/    128  [1;36mand =   57247[0m  [1;35mlev = 4372[0m [1;35m(2931.93)[0m  mem = 0.66 MB
+elapse: 0.01 seconds, total: 0.01 seconds
+elapse: 7.75 seconds, total: 7.76 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/div[0m : i/o =    128/    128  [1;36mand =   29040[0m  [1;35mlev = 4374[0m [1;35m(2945.94)[0m  mem = 0.34 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/div.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/div[0m : i/o =    128/    128  [1;36mand =   57247[0m  [1;35mlev = 4372[0m [1;35m(2931.93)[0m  mem = 0.66 MB
+elapse: 0.01 seconds, total: 0.01 seconds
+elapse: 109.87 seconds, total: 109.88 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/div[0m : i/o =    128/    128  [1;36mand =   57241[0m  [1;35mlev = 4372[0m [1;35m(2931.93)[0m  mem = 0.66 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/hyp.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/hyp[0m : i/o =    256/    128  [1;36mand =  214335[0m  [1;35mlev =24801[0m [1;35m(8704.14)[0m  mem = 2.46 MB
+elapse: 0.03 seconds, total: 0.03 seconds
+elapse: 2.17 seconds, total: 2.20 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/hyp[0m : i/o =    256/    128  [1;36mand =  214306[0m  [1;35mlev =24800[0m [1;35m(8703.14)[0m  mem = 2.46 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/hyp.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/hyp[0m : i/o =    256/    128  [1;36mand =  214335[0m  [1;35mlev =24801[0m [1;35m(8704.14)[0m  mem = 2.46 MB
+elapse: 0.04 seconds, total: 0.04 seconds
+elapse: 0.46 seconds, total: 0.50 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/hyp[0m : i/o =    256/    128  [1;36mand =  214306[0m  [1;35mlev =24800[0m [1;35m(8703.14)[0m  mem = 2.46 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/max.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/max[0m : i/o =    512/    130  [1;36mand =    2865[0m  [1;35mlev =  287[0m [1;35m(286.98)[0m  mem = 0.05 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/max[0m : i/o =    512/    130  [1;36mand =    2865[0m  [1;35mlev =  287[0m [1;35m(286.98)[0m  mem = 0.05 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/max.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/max[0m : i/o =    512/    130  [1;36mand =    2865[0m  [1;35mlev =  287[0m [1;35m(286.98)[0m  mem = 0.05 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.00 seconds, total: 0.00 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/max[0m : i/o =    512/    130  [1;36mand =    2865[0m  [1;35mlev =  287[0m [1;35m(286.98)[0m  mem = 0.05 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/multiplier.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/multiplier[0m : i/o =    128/    128  [1;36mand =   27062[0m  [1;35mlev =  274[0m [1;35m(144.10)[0m  mem = 0.32 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 193.59 seconds, total: 193.59 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/multiplier[0m : i/o =    128/    128  [1;36mand =   27060[0m  [1;35mlev =  274[0m [1;35m(144.09)[0m  mem = 0.32 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/multiplier.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/multiplier[0m : i/o =    128/    128  [1;36mand =   27062[0m  [1;35mlev =  274[0m [1;35m(144.10)[0m  mem = 0.32 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.05 seconds, total: 0.06 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/multiplier[0m : i/o =    128/    128  [1;36mand =   27060[0m  [1;35mlev =  274[0m [1;35m(144.09)[0m  mem = 0.32 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sin.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sin[0m : i/o =     24/     25  [1;36mand =    5416[0m  [1;35mlev =  225[0m [1;35m(204.28)[0m  mem = 0.06 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 5.63 seconds, total: 5.63 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sin[0m : i/o =     24/     25  [1;36mand =    5353[0m  [1;35mlev =  222[0m [1;35m(195.20)[0m  mem = 0.06 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sin.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sin[0m : i/o =     24/     25  [1;36mand =    5416[0m  [1;35mlev =  225[0m [1;35m(204.28)[0m  mem = 0.06 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.24 seconds, total: 0.24 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sin[0m : i/o =     24/     25  [1;36mand =    5416[0m  [1;35mlev =  225[0m [1;35m(204.28)[0m  mem = 0.06 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sqrt.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt[0m : i/o =    128/     64  [1;36mand =   24618[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem = 0.29 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.07 seconds, total: 0.08 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt[0m : i/o =    128/     64  [1;36mand =   24507[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem = 0.29 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sqrt.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt[0m : i/o =    128/     64  [1;36mand =   24618[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem = 0.29 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.03 seconds, total: 0.03 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt[0m : i/o =    128/     64  [1;36mand =   24507[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem = 0.29 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/square.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square[0m : i/o =     64/    128  [1;36mand =   18484[0m  [1;35mlev =  250[0m [1;35m(125.25)[0m  mem = 0.22 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.06 seconds, total: 0.06 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square[0m : i/o =     64/    128  [1;36mand =   18482[0m  [1;35mlev =  251[0m [1;35m(126.18)[0m  mem = 0.22 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/square.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square[0m : i/o =     64/    128  [1;36mand =   18484[0m  [1;35mlev =  250[0m [1;35m(125.25)[0m  mem = 0.22 MB
+elapse: 0.00 seconds, total: 0.00 seconds
+elapse: 0.19 seconds, total: 0.19 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square[0m : i/o =     64/    128  [1;36mand =   18482[0m  [1;35mlev =  251[0m [1;35m(126.18)[0m  mem = 0.22 MB
+

@@ -44,6 +44,7 @@ ABC_NAMESPACE_IMPL_START
   SeeAlso     []
 
 ***********************************************************************/
+// Fra_FraigSat(  pAig,             (ABC_INT64_T)2*nBTLimitStart, (ABC_INT64_T)0, 0, 0, 0, 1, 0, 0, 0 );
 int Fra_FraigSat( Aig_Man_t * pMan, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimit, int nLearnedStart, int nLearnedDelta, int nLearnedPerce, int fFlipBits, int fAndOuts, int fNewSolver, int fVerbose )
 {
     if ( fNewSolver )

@@ -1,0 +1,66 @@
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/multiplier_10xd.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/multiplier_10xd[0m : i/o = 131072/ 131072  [1;36mand =27711488[0m  [1;35mlev =  274[0m [1;35m(144.10)[0m  mem =321.13 MB
+elapse: 7.81 seconds, total: 7.81 seconds
+elapse: 235.42 seconds, total: 243.24 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/multiplier_10xd[0m : i/o = 131072/ 131072  [1;36mand =27709440[0m  [1;35mlev =  274[0m [1;35m(144.09)[0m  mem =321.11 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd[0m : i/o = 131072/  65536  [1;36mand =25208832[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem =291.49 MB
+elapse: 7.04 seconds, total: 7.04 seconds
+elapse: 173.31 seconds, total: 180.34 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd[0m : i/o = 131072/  65536  [1;36mand =25095168[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem =290.19 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd.aig; &ps; time; &fraig -c; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd[0m : i/o = 131072/  65536  [1;36mand =25208832[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem =291.49 MB
+elapse: 7.09 seconds, total: 7.09 seconds
+elapse: 68.74 seconds, total: 75.82 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd[0m : i/o = 131072/  65536  [1;36mand =25095168[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem =290.19 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd.aig; &ps; time; &fraig -x; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd[0m : i/o = 131072/  65536  [1;36mand =25208832[0m  [1;35mlev = 5058[0m [1;35m(1716.22)[0m  mem =291.49 MB
+elapse: 7.19 seconds, total: 7.19 seconds
+elapse: 28.13 seconds, total: 35.32 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/sqrt_10xd[0m : i/o = 131072/  65536  [1;36mand =25094144[0m  [1;35mlev = 5057[0m [1;35m(1715.23)[0m  mem =290.18 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/square_10xd.aig; &ps; time; &fraig  ; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square_10xd[0m : i/o =  65536/ 131072  [1;36mand =18927616[0m  [1;35mlev =  250[0m [1;35m(125.25)[0m  mem =219.61 MB
+elapse: 5.11 seconds, total: 5.11 seconds
+elapse: 283.69 seconds, total: 288.80 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square_10xd[0m : i/o =  65536/ 131072  [1;36mand =18925568[0m  [1;35mlev =  251[0m [1;35m(126.18)[0m  mem =219.59 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/square_10xd.aig; &ps; time; &fraig -x; time; &ps".
+
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square_10xd[0m : i/o =  65536/ 131072  [1;36mand =18927616[0m  [1;35mlev =  250[0m [1;35m(125.25)[0m  mem =219.61 MB
+elapse: 5.09 seconds, total: 5.09 seconds
+elapse: 31.97 seconds, total: 37.07 seconds
+[1;37m/data/ssd/ysun/github/abc/logic_my_suite/square_10xd[0m : i/o =  65536/ 131072  [1;36mand =18925568[0m  [1;35mlev =  251[0m [1;35m(126.18)[0m  mem =219.59 MB
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/ac97_ctrl_10xd.aig; &ps; time; &fraig  ; time; &ps".
+
+Error: Cannot open input file "/data/ssd/ysun/github/abc/logic_my_suite/ac97_ctrl_10xd.aig". 
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/ac97_ctrl_10xd.aig; &ps; time; &fraig -c; time; &ps".
+
+Error: Cannot open input file "/data/ssd/ysun/github/abc/logic_my_suite/ac97_ctrl_10xd.aig". 
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/ac97_ctrl_10xd.aig; &ps; time; &fraig -x; time; &ps".
+
+Error: Cannot open input file "/data/ssd/ysun/github/abc/logic_my_suite/ac97_ctrl_10xd.aig". 
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/vga_lcd_5xd.aig; &ps; time; &fraig  ; time; &ps".
+
+Error: Cannot open input file "/data/ssd/ysun/github/abc/logic_my_suite/vga_lcd_5xd.aig". 
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/vga_lcd_5xd.aig; &ps; time; &fraig -c; time; &ps".
+
+Error: Cannot open input file "/data/ssd/ysun/github/abc/logic_my_suite/vga_lcd_5xd.aig". 
+
+ABC command line: "&r /data/ssd/ysun/github/abc/logic_my_suite/vga_lcd_5xd.aig; &ps; time; &fraig -x; time; &ps".
+
+Error: Cannot open input file "/data/ssd/ysun/github/abc/logic_my_suite/vga_lcd_5xd.aig". 
+

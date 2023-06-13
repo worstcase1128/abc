@@ -2873,6 +2873,7 @@ int Gia_ManMiter_rec( Gia_Man_t * pNew, Gia_Man_t * p, Gia_Obj_t * pObj )
     assert( Gia_ObjIsAnd(pObj) );
     Gia_ManMiter_rec( pNew, p, Gia_ObjFanin0(pObj) );
     Gia_ManMiter_rec( pNew, p, Gia_ObjFanin1(pObj) );
+    // Gia_ObjFanin0Copy: return Abc_LitNotCond( Gia_ObjFanin0(pObj)->Value, Gia_ObjFaninC0(pObj) ); 
     return pObj->Value = Gia_ManHashAnd( pNew, Gia_ObjFanin0Copy(pObj), Gia_ObjFanin1Copy(pObj) );
 }
 

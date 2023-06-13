@@ -1,0 +1,22 @@
+,benchmark,ori_and,ori_level,fr_and,fr_level,time,sat_type
+0,multiplier_10xd,0,0.0,0.0,0.0,timeout, 
+1,multiplier_10xd,27711488,274.0,27709440.0,274.0,235.43,-c
+2,multiplier_10xd,0,0.0,0.0,0.0,timeout,-x
+3,sqrt_10xd,25208832,5058.0,25095168.0,5058.0,173.3, 
+4,sqrt_10xd,25208832,5058.0,25095168.0,5058.0,68.72999999999999,-c
+5,sqrt_10xd,25208832,5058.0,25094144.0,5057.0,28.13,-x
+6,square_10xd,18927616,250.0,18925568.0,251.0,283.69, 
+7,square_10xd,0,0.0,0.0,0.0,timeout,-c
+8,square_10xd,18927616,250.0,18925568.0,251.0,31.98,-x
+9,voter_10xd,0,0.0,0.0,0.0,timeout, 
+10,voter_10xd,0,0.0,0.0,0.0,timeout,-c
+11,voter_10xd,0,0.0,0.0,0.0,timeout,-x
+12,sin_10xd,0,0.0,0.0,0.0,timeout, 
+13,sin_10xd,0,0.0,0.0,0.0,timeout,-c
+14,sin_10xd,0,0.0,0.0,0.0,timeout,-x
+15,ac97_ctrl_10xd, ,,,,,
+16,ac97_ctrl_10xd,-c,,,,,
+17,ac97_ctrl_10xd,-x,,,,,
+18,vga_lcd_5xd, ,,,,,
+19,vga_lcd_5xd,-c,,,,,
+20,vga_lcd_5xd,-x,,,,,
