@@ -189,29 +189,8 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
     if ( !fFirst )
     {
         // recompute the parameters of the best cut
-        if ( p->pPars->fDelayOpt )
-            pCut->Delay = If_CutSopBalanceEval( p, pCut, NULL );
-        else if ( p->pPars->fDsdBalance )
-            pCut->Delay = If_CutDsdBalanceEval( p, pCut, NULL );
-        else if ( p->pPars->fUserRecLib )
+        if ( p->pPars->fUserRecLib )
             pCut->Delay = If_CutDelayRecCost3( p, pCut, pObj ); 
-        else if ( p->pPars->fUserSesLib )
-        {
-            int Cost = 0;
-            pCut->fUser = 1;
-            pCut->Delay = (float)Abc_ExactDelayCost( If_CutTruthW(p, pCut), If_CutLeaveNum(pCut), If_CutArrTimeProfile(p, pCut), If_CutPerm(pCut), &Cost, If_ManCutAigDelay(p, pObj, pCut) ); 
-            if ( Cost == ABC_INFINITY )
-            {
-                for ( v = 0; v < If_CutLeaveNum(pCut); v++ )
-                    If_CutPerm(pCut)[v] = IF_BIG_CHAR;
-                pCut->Cost = IF_COST_MAX;
-                pCut->fUseless = 1;
-            }
-        }
-        else if ( p->pPars->fDelayOptLut )
-            pCut->Delay = If_CutLutBalanceEval( p, pCut );
-        else if( p->pPars->nGateSize > 0 )
-            pCut->Delay = If_CutDelaySop( p, pCut );
         else
             pCut->Delay = If_CutDelay( p, pObj, pCut );
         assert( pCut->Delay != -1 );
@@ -220,10 +199,6 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
             Abc_Print( 1, "If_ObjPerformMappingAnd(): Warning! Node with ID %d has delay (%f) exceeding the required times (%f).\n", 
                 pObj->Id, pCut->Delay, pObj->Required + p->fEpsilon );
         pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut ) : If_CutAreaFlow( p, pCut );
-        if ( p->pPars->fEdge )
-            pCut->Edge = (Mode == 2)? If_CutEdgeDerefed( p, pCut ) : If_CutEdgeFlow( p, pCut );
-        if ( p->pPars->fPower )
-            pCut->Power = (Mode == 2)? If_CutPowerDerefed( p, pCut, pObj ) : If_CutPowerFlow( p, pCut, pObj );
         // save the best cut from the previous iteration
         if ( !fPreprocess || pCut->nLeaves <= 1 )
             If_CutCopy( p, pCutSet->ppCuts[pCutSet->nCuts++], pCut );
@@ -239,34 +214,14 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         pCut = pCutSet->ppCuts[pCutSet->nCuts];
         // make sure K-feasible cut exists
         if ( If_WordCountOnes(pCut0->uSign | pCut1->uSign) > p->pPars->nLutSize )
-            continue;
+            continue;      
 
-        pCut0R = pCut0;
-        pCut1R = pCut1;
-        fFunc0R = pCut0->iCutFunc ^ pCut0->fCompl ^ pObj->fCompl0;
-        fFunc1R = pCut1->iCutFunc ^ pCut1->fCompl ^ pObj->fCompl1;
-        if ( !p->pPars->fUseTtPerm || pCut0->nLeaves > pCut1->nLeaves || (pCut0->nLeaves == pCut1->nLeaves && fFunc0R > fFunc1R) )
-        {
-        }
-        else
-        {
-            ABC_SWAP( If_Cut_t *, pCut0R, pCut1R );
-            ABC_SWAP( int, fFunc0R, fFunc1R );
-        }        
-
-        // merge the cuts
-        if ( p->pPars->fUseTtPerm )
-        {
-            if ( !If_CutMerge( p, pCut0R, pCut1R, pCut ) )
-                continue;
-        }
-        else
-        {
-            if ( !If_CutMergeOrdered( p, pCut0, pCut1, pCut ) )
-                continue;
-        }
-        if ( pObj->fSpec && pCut->nLeaves == (unsigned)p->pPars->nLutSize )
+        // // merge the cuts
+        if ( !If_CutMergeOrdered( p, pCut0, pCut1, pCut ) )
             continue;
+        
+        // if ( pObj->fSpec && pCut->nLeaves == (unsigned)p->pPars->nLutSize )
+        //     continue;
         p->nCutsMerged++;
         p->nCutsTotal++;
         // check if this cut is contained in any of the available cuts
@@ -274,8 +229,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
             continue;
         // check if the cut is a special AND-gate cut
         pCut->fAndCut = fUseAndCut && pCut->nLeaves == 2 && pCut->pLeaves[0] == pObj->pFanin0->Id && pCut->pLeaves[1] == pObj->pFanin1->Id;
-        //assert( pCut->nLeaves != 2 || pCut->pLeaves[0] < pCut->pLeaves[1] );
-        //assert( pCut->nLeaves != 2 || pObj->pFanin0->Id < pObj->pFanin1->Id );
+
         // compute the truth table
         pCut->iCutFunc = -1;
         pCut->fCompl = 0;
@@ -283,134 +237,17 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         {
 //            int nShared = pCut0->nLeaves + pCut1->nLeaves - pCut->nLeaves;
             abctime clk = 0;
-            if ( p->pPars->fVerbose )
-                clk = Abc_Clock();
-            if ( p->pPars->fUseTtPerm )
-                fChange = If_CutComputeTruthPerm( p, pCut, pCut0R, pCut1R, fFunc0R, fFunc1R );
-            else
-                fChange = If_CutComputeTruth( p, pCut, pCut0, pCut1, pObj->fCompl0, pObj->fCompl1 );
+            fChange = If_CutComputeTruth( p, pCut, pCut0, pCut1, pObj->fCompl0, pObj->fCompl1 );
             if ( p->pPars->fVerbose )
                 p->timeCache[4] += Abc_Clock() - clk;
             if ( !p->pPars->fSkipCutFilter && fChange && If_CutFilter( pCutSet, pCut, fSave0 ) )
                 continue;
             if ( p->pPars->fLut6Filter && pCut->nLeaves == 6 && !If_CutCheckTruth6(p, pCut) )
                 continue;
-            if ( p->pPars->fUseDsd )
-            {
-                extern void If_ManCacheRecord( If_Man_t * p, int iDsd0, int iDsd1, int nShared, int iDsd );
-                int truthId = Abc_Lit2Var(pCut->iCutFunc);
-                if ( truthId >= Vec_IntSize(p->vTtDsds[pCut->nLeaves]) || Vec_IntEntry(p->vTtDsds[pCut->nLeaves], truthId) == -1 )
-                {
-                    while ( truthId >= Vec_IntSize(p->vTtDsds[pCut->nLeaves]) )
-                    {
-                        Vec_IntPush( p->vTtDsds[pCut->nLeaves], -1 );
-                        for ( v = 0; v < Abc_MaxInt(6, pCut->nLeaves); v++ )
-                            Vec_StrPush( p->vTtPerms[pCut->nLeaves], IF_BIG_CHAR );
-                    }
-                    iCutDsd = If_DsdManCompute( p->pIfDsdMan, If_CutTruthWR(p, pCut), pCut->nLeaves, (unsigned char *)If_CutDsdPerm(p, pCut), p->pPars->pLutStruct );
-                    Vec_IntWriteEntry( p->vTtDsds[pCut->nLeaves], truthId, iCutDsd );
-                }
-                assert( If_DsdManSuppSize(p->pIfDsdMan, If_CutDsdLit(p, pCut)) == (int)pCut->nLeaves );
-                //If_ManCacheRecord( p, If_CutDsdLit(p, pCut0), If_CutDsdLit(p, pCut1), nShared, If_CutDsdLit(p, pCut) );
-            }
+
             // run user functions
             pCut->fUseless = 0;
-            if ( p->pPars->pFuncCell || p->pPars->pFuncCell2 )
-            {
-                assert( p->pPars->fUseTtPerm == 0 );
-                assert( pCut->nLimit >= 4 && pCut->nLimit <= 16 );
-                if ( p->pPars->fUseDsd )
-                    pCut->fUseless = If_DsdManCheckDec( p->pIfDsdMan, If_CutDsdLit(p, pCut) );
-                else if ( p->pPars->pFuncCell2 )
-                    pCut->fUseless = !p->pPars->pFuncCell2( p, (word *)If_CutTruthW(p, pCut), pCut->nLeaves, NULL, NULL );
-                else
-                    pCut->fUseless = !p->pPars->pFuncCell( p, If_CutTruth(p, pCut), Abc_MaxInt(6, pCut->nLeaves), pCut->nLeaves, p->pPars->pLutStruct );
-                p->nCutsUselessAll += pCut->fUseless;
-                p->nCutsUseless[pCut->nLeaves] += pCut->fUseless;
-                p->nCutsCountAll++;
-                p->nCutsCount[pCut->nLeaves]++;
-                // skip 5-input cuts, which cannot be decomposed
-                if ( (p->pPars->fEnableCheck75 || p->pPars->fEnableCheck75u) && pCut->nLeaves == 5 && pCut->nLimit == 5 )
-                {
-                    extern int If_CluCheckDecInAny( word t, int nVars );
-                    extern int If_CluCheckDecOut( word t, int nVars );
-                    unsigned TruthU = *If_CutTruth(p, pCut);
-                    word Truth = (((word)TruthU << 32) | (word)TruthU);
-                    p->nCuts5++;
-                    if ( If_CluCheckDecInAny( Truth, 5 ) )
-                        p->nCuts5a++;
-                    else
-                        continue;
-                }
-                else if ( p->pPars->fVerbose && pCut->nLeaves == 5 )
-                {
-                    extern int If_CluCheckDecInAny( word t, int nVars );
-                    extern int If_CluCheckDecOut( word t, int nVars );
-                    unsigned TruthU = *If_CutTruth(p, pCut);
-                    word Truth = (((word)TruthU << 32) | (word)TruthU);
-                    p->nCuts5++;
-                    if ( If_CluCheckDecInAny( Truth, 5 ) || If_CluCheckDecOut( Truth, 5 ) )
-                        p->nCuts5a++;
-                }
-            }
-            else if ( p->pPars->fUseDsdTune )
-            {
-                pCut->fUseless = If_DsdManReadMark( p->pIfDsdMan, If_CutDsdLit(p, pCut) );
-                p->nCutsUselessAll += pCut->fUseless;
-                p->nCutsUseless[pCut->nLeaves] += pCut->fUseless;
-                p->nCutsCountAll++;
-                p->nCutsCount[pCut->nLeaves]++;
-            }
-            else if ( p->pPars->fUse34Spec )
-            {
-                assert( pCut->nLeaves <= 4 );
-                if ( pCut->nLeaves == 4 && !Abc_Tt4Check( (int)(0xFFFF & *If_CutTruth(p, pCut)) ) )
-                    pCut->fUseless = 1;
-            }
-            else 
-            {// default here
-                // none of the two if functions below would run by default
-                if ( p->pPars->fUseAndVars )
-                {
-                    int iDecMask = -1, truthId = Abc_Lit2Var(pCut->iCutFunc);
-                    assert( p->pPars->nLutSize <= 13 );
-                    if ( truthId >= Vec_IntSize(p->vTtDecs[pCut->nLeaves]) || Vec_IntEntry(p->vTtDecs[pCut->nLeaves], truthId) == -1 )
-                    {
-                        while ( truthId >= Vec_IntSize(p->vTtDecs[pCut->nLeaves]) )
-                            Vec_IntPush( p->vTtDecs[pCut->nLeaves], -1 );
-                        if ( (int)pCut->nLeaves > p->pPars->nLutSize / 2 && (int)pCut->nLeaves <= 2 * (p->pPars->nLutSize / 2) )
-                            iDecMask = Abc_TtProcessBiDec( If_CutTruthWR(p, pCut), (int)pCut->nLeaves, p->pPars->nLutSize / 2 );
-                        else
-                            iDecMask = 0;
-                        Vec_IntWriteEntry( p->vTtDecs[pCut->nLeaves], truthId, iDecMask );
-                    }
-                    iDecMask = Vec_IntEntry(p->vTtDecs[pCut->nLeaves], truthId);
-                    assert( iDecMask >= 0 );
-                    pCut->fUseless = (int)(iDecMask == 0 && (int)pCut->nLeaves > p->pPars->nLutSize / 2);
-                    p->nCutsUselessAll += pCut->fUseless;
-                    p->nCutsUseless[pCut->nLeaves] += pCut->fUseless;
-                    p->nCutsCountAll++;
-                    p->nCutsCount[pCut->nLeaves]++;
-                }
-                if ( p->pPars->fUseCofVars && (!p->pPars->fUseAndVars || pCut->fUseless) )
-                {
-                    int iCofVar = -1, truthId = Abc_Lit2Var(pCut->iCutFunc);
-                    if ( truthId >= Vec_StrSize(p->vTtVars[pCut->nLeaves]) || Vec_StrEntry(p->vTtVars[pCut->nLeaves], truthId) == (char)-1 )
-                    {
-                        while ( truthId >= Vec_StrSize(p->vTtVars[pCut->nLeaves]) )
-                            Vec_StrPush( p->vTtVars[pCut->nLeaves], (char)-1 );
-                        iCofVar = Abc_TtCheckCondDep( If_CutTruthWR(p, pCut), pCut->nLeaves, p->pPars->nLutSize / 2 );
-                        Vec_StrWriteEntry( p->vTtVars[pCut->nLeaves], truthId, (char)iCofVar );
-                    }
-                    iCofVar = Vec_StrEntry(p->vTtVars[pCut->nLeaves], truthId);
-                    assert( iCofVar >= 0 && iCofVar <= (int)pCut->nLeaves );
-                    pCut->fUseless = (int)(iCofVar == (int)pCut->nLeaves && pCut->nLeaves > 0);
-                    p->nCutsUselessAll += pCut->fUseless;
-                    p->nCutsUseless[pCut->nLeaves] += pCut->fUseless;
-                    p->nCutsCountAll++;
-                    p->nCutsCount[pCut->nLeaves]++;
-                }
-            }
+
         }
         
         // compute the application-specific cost and depth
@@ -419,29 +256,8 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         if ( pCut->Cost == IF_COST_MAX )
             continue;
         // check if the cut satisfies the required times
-        if ( p->pPars->fDelayOpt )
-            pCut->Delay = If_CutSopBalanceEval( p, pCut, NULL );
-        else if ( p->pPars->fDsdBalance )
-            pCut->Delay = If_CutDsdBalanceEval( p, pCut, NULL );
-        else if ( p->pPars->fUserRecLib )
+        if ( p->pPars->fUserRecLib )
             pCut->Delay = If_CutDelayRecCost3( p, pCut, pObj ); 
-        else if ( p->pPars->fUserSesLib )
-        {
-            int Cost = 0;
-            pCut->fUser = 1;
-            pCut->Delay = (float)Abc_ExactDelayCost( If_CutTruthW(p, pCut), If_CutLeaveNum(pCut), If_CutArrTimeProfile(p, pCut), If_CutPerm(pCut), &Cost, If_ManCutAigDelay(p, pObj, pCut) ); 
-            if ( Cost == ABC_INFINITY )
-            {
-                for ( v = 0; v < If_CutLeaveNum(pCut); v++ )
-                    If_CutPerm(pCut)[v] = IF_BIG_CHAR;
-                pCut->Cost = IF_COST_MAX;
-                pCut->fUseless = 1;
-            }
-        }
-        else if ( p->pPars->fDelayOptLut )
-            pCut->Delay = If_CutLutBalanceEval( p, pCut );
-        else if( p->pPars->nGateSize > 0 )
-            pCut->Delay = If_CutDelaySop( p, pCut );
         else 
             pCut->Delay = If_CutDelay( p, pObj, pCut );
         if ( pCut->Delay == -1 )
@@ -450,13 +266,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
             continue;
         // compute area of the cut (this area may depend on the application specific cost)
         pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut ) : If_CutAreaFlow( p, pCut );
-        if ( p->pPars->fEdge )
-            pCut->Edge = (Mode == 2)? If_CutEdgeDerefed( p, pCut ) : If_CutEdgeFlow( p, pCut );
-        if ( p->pPars->fPower )
-            pCut->Power = (Mode == 2)? If_CutPowerDerefed( p, pCut, pObj ) : If_CutPowerFlow( p, pCut, pObj );
-//        pCut->AveRefs = (Mode == 0)? (float)0.0 : If_CutAverageRefs( p, pCut );
-        // insert the cut into storage
-// printf("(%.2f %.2f %.2f %d) ", pCut->Delay, pCut->Area, pCut->Edge, pCut->iCutFunc);
+
         If_CutSort( p, pCutSet, pCut );
     }   // traverse all cuts combinations of two fanins
     assert( pCutSet->nCuts > 0 );
@@ -474,20 +284,13 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         If_ManSetupCutTriv( p, pCutSet->ppCuts[pCutSet->nCuts++], pObj->Id );
         assert( pCutSet->nCuts <= pCutSet->nCutsMax+1 );
     }
-//    if ( If_ObjCutBest(pObj)->nLeaves == 0 )
-//        p->nBestCutSmall[0]++;
-//    else if ( If_ObjCutBest(pObj)->nLeaves == 1 )
-//        p->nBestCutSmall[1]++;
 
     // ref the selected cut
     if ( Mode && pObj->nRefs > 0 )
         If_CutAreaRef( p, If_ObjCutBest(pObj) );
     if ( If_ObjCutBest(pObj)->fUseless )
         Abc_Print( 1, "The best cut is useless.\n" );
-    // call the user specified function for each cut
-    if ( p->pPars->pFuncUser )
-        If_ObjForEachCut( pObj, pCut, i )
-            p->pPars->pFuncUser( p, pObj, pCut );
+
     // free the cuts
     If_ManDerefNodeCutSet( p, pObj );
 }
@@ -503,79 +306,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
   SeeAlso     []
 
 ***********************************************************************/
-void If_ObjPerformMappingChoice( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPreprocess )
-{
-    If_Set_t * pCutSet;
-    If_Obj_t * pTemp;
-    If_Cut_t * pCutTemp, * pCut;
-    int i, fSave0 = p->pPars->fDelayOpt || p->pPars->fDelayOptLut || p->pPars->fDsdBalance || p->pPars->fUserRecLib || p->pPars->fUserSesLib || p->pPars->fUse34Spec;
-    assert( pObj->pEquiv != NULL );
-
-    // prepare
-    if ( Mode && pObj->nRefs > 0 )
-        If_CutAreaDeref( p, If_ObjCutBest(pObj) );
-
-    // remove elementary cuts
-    for ( pTemp = pObj; pTemp; pTemp = pTemp->pEquiv )
-        if ( pTemp != pObj || pTemp->pCutSet->nCuts > 1 )
-            pTemp->pCutSet->nCuts--;
-
-    // update the cutset of the node
-    pCutSet = pObj->pCutSet;
-
-    // generate cuts
-    for ( pTemp = pObj->pEquiv; pTemp; pTemp = pTemp->pEquiv )
-    {
-        if ( pTemp->pCutSet->nCuts == 0 )
-            continue;
-        // go through the cuts of this node
-        If_ObjForEachCut( pTemp, pCutTemp, i )
-        {
-            if ( pCutTemp->fUseless )
-                continue;
-            // get the next free cut
-            assert( pCutSet->nCuts <= pCutSet->nCutsMax );
-            pCut = pCutSet->ppCuts[pCutSet->nCuts];
-            // copy the cut into storage
-            If_CutCopy( p, pCut, pCutTemp );
-            // check if this cut is contained in any of the available cuts
-            if ( If_CutFilter( pCutSet, pCut, fSave0 ) )
-                continue;
-            // check if the cut satisfies the required times
-//            assert( pCut->Delay == If_CutDelay( p, pTemp, pCut ) );
-            if ( Mode && pCut->Delay > pObj->Required + p->fEpsilon )
-                continue;
-            // set the phase attribute
-            pCut->fCompl = pObj->fPhase ^ pTemp->fPhase;
-            // compute area of the cut (this area may depend on the application specific cost)
-            pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut ) : If_CutAreaFlow( p, pCut );
-            if ( p->pPars->fEdge )
-                pCut->Edge = (Mode == 2)? If_CutEdgeDerefed( p, pCut ) : If_CutEdgeFlow( p, pCut );
-            if ( p->pPars->fPower )
-                pCut->Power = (Mode == 2)? If_CutPowerDerefed( p, pCut, pObj ) : If_CutPowerFlow( p, pCut, pObj );
-//            pCut->AveRefs = (Mode == 0)? (float)0.0 : If_CutAverageRefs( p, pCut );
-            // insert the cut into storage
-            If_CutSort( p, pCutSet, pCut );
-        }
-    } 
-    assert( pCutSet->nCuts > 0 );
-
-    // update the best cut
-    if ( !fPreprocess || pCutSet->ppCuts[0]->Delay <= pObj->Required + p->fEpsilon )
-        If_CutCopy( p, If_ObjCutBest(pObj), pCutSet->ppCuts[0] );
-    // add the trivial cut to the set
-    if ( !pObj->fSkipCut && If_ObjCutBest(pObj)->nLeaves > 1 )
-    {
-        If_ManSetupCutTriv( p, pCutSet->ppCuts[pCutSet->nCuts++], pObj->Id );
-        assert( pCutSet->nCuts <= pCutSet->nCutsMax+1 );
-    }
-
-    // ref the selected cut
-    if ( Mode && pObj->nRefs > 0 )
-        If_CutAreaRef( p, If_ObjCutBest(pObj) );
-    // free the cuts
-    If_ManDerefChoiceCutSet( p, pObj );
-}
+void If_ObjPerformMappingChoice( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPreprocess ){}
 
 /**Function*************************************************************
 
@@ -612,50 +343,15 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
     If_ManForEachNode( p, pObj, i )
         assert( pObj->nVisits == pObj->nVisitsCopy );
     // map the internal nodes
-    if ( p->pManTim != NULL )
+    // default here
+    pProgress = Extra_ProgressBarStart( stdout, If_ManObjNum(p) );
+    If_ManForEachNode( p, pObj, i )
     {
-        Tim_ManIncrementTravId( p->pManTim );
-        If_ManForEachObj( p, pObj, i )
-        {
-            if ( If_ObjIsAnd(pObj) )
-            {
-                If_ObjPerformMappingAnd( p, pObj, Mode, fPreprocess, fFirst );
-                if ( pObj->fRepr )
-                    If_ObjPerformMappingChoice( p, pObj, Mode, fPreprocess );
-            }
-            else if ( If_ObjIsCi(pObj) )
-            {
-//Abc_Print( 1, "processing CI %d\n", pObj->Id );
-                arrTime = Tim_ManGetCiArrival( p->pManTim, pObj->IdPio );
-                If_ObjSetArrTime( pObj, arrTime );
-            }
-            else if ( If_ObjIsCo(pObj) )
-            {
-                arrTime = If_ObjArrTime( If_ObjFanin0(pObj) );
-                Tim_ManSetCoArrival( p->pManTim, pObj->IdPio, arrTime );
-            }
-            else if ( If_ObjIsConst1(pObj) )
-            {
-                arrTime = -IF_INFINITY;
-                If_ObjSetArrTime( pObj, arrTime );
-            }
-            else
-                assert( 0 );
-        }
-//        Tim_ManPrint( p->pManTim );
+        Extra_ProgressBarUpdate( pProgress, i, pLabel );
+        If_ObjPerformMappingAnd( p, pObj, Mode, fPreprocess, fFirst );
+
     }
-    else
-    {
-        // default here
-        pProgress = Extra_ProgressBarStart( stdout, If_ManObjNum(p) );
-        If_ManForEachNode( p, pObj, i )
-        {
-            Extra_ProgressBarUpdate( pProgress, i, pLabel );
-            If_ObjPerformMappingAnd( p, pObj, Mode, fPreprocess, fFirst );
-            if ( pObj->fRepr )
-                If_ObjPerformMappingChoice( p, pObj, Mode, fPreprocess );
-        }
-    }
+    
     Extra_ProgressBarStop( pProgress );
     // make sure the visit counters are all zero
     If_ManForEachNode( p, pObj, i )
@@ -690,7 +386,7 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
                 int BestPo = -1;
                 pCutBest = If_ObjCutBest( pIfObj );
                 int s = getInternalNode(p, pIfObj, pCutBest, &BestPo);
-                printf("(%d %d %d) ", i, BestPo, s);
+                printf("(%d %d %d %.2lf) ", i, BestPo, s, pCutBest->Area);
                 total_area += s;
             }
         }

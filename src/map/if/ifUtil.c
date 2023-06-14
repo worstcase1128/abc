@@ -412,6 +412,8 @@ float If_ManMarkMapping_rec( If_Man_t * p, If_Obj_t * pObj )
     pCutBest = If_ObjCutBest(pObj);
     p->nNets += pCutBest->nLeaves;
     aArea = If_CutLutArea( p, pCutBest );
+// printf("%d %d\n", pCutBest->fAndCut, pCutBest->fUser);
+// printf("aArea: %lf\n", aArea);
     If_CutForEachLeaf( p, pCutBest, pLeaf, i )
     {
         p->dPower += pSwitching? pSwitching[pLeaf->Id] : 0.0;

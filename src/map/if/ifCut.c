@@ -934,6 +934,17 @@ float If_CutAreaFlow( If_Man_t * p, If_Cut_t * pCut )
     float Flow, AddOn;
     int i;
     Flow = If_CutLutArea(p, pCut);
+    // If_CutLutArea( If_Man_t * p, If_Cut_t * pCut )      { 
+    //     return 
+    //     pCut->fAndCut ? 
+    //         p->pPars->nAndArea : 
+    //         (pCut->fUser? 
+    //             (float)pCut->Cost : 
+    //             (p->pPars->pLutLib? 
+    //                 p->pPars->pLutLib->pLutAreas[pCut->nLeaves] : 
+    //                 (float)1.0));  }
+
+// printf("flow: %.2lf\n", Flow);
     If_CutForEachLeaf( p, pCut, pLeaf, i )
     {
         if ( pLeaf->nRefs == 0 || If_ObjIsConst1(pLeaf) )

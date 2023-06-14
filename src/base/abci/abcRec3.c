@@ -980,6 +980,8 @@ p->timeCanon += Abc_Clock() - clk;
     // mark as user cut.
     DelayProfile = Vec_WrdEntry(p->vDelays, iBestPo);
     pCut->Cost = Vec_StrEntry(p->vAreas, iBestPo);
+// always equal
+// printf("cost: %u area: %u\n", pCut->Cost, Vec_StrEntry(p->vAreas, iBestPo));
     for ( i = 0; i < nLeaves; i++ )
         pPerm[(int)pCanonPerm[i]] = Lms_DelayGet(DelayProfile, i);
     if ( 0 )
