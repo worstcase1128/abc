@@ -145,12 +145,28 @@ static inline int If_CutCheckDominance( If_Cut_t * pDom, If_Cut_t * pCut )
 ***********************************************************************/
 int If_CutFilter( If_Set_t * pCutSet, If_Cut_t * pCut, int fSaveCut0 )
 { 
+// int print=0;
+// if(fSaveCut0==0){
+//     print=1;
+//     fSaveCut0 = 1;
+//     printf("filtering cut: ");
+//     for(int j=0; j<pCut->nLeaves; j++)
+//         printf("%d ", pCut->pLeaves[j]);
+//     printf("\n");
+// }
     If_Cut_t * pTemp;
     int i, k;
     assert( pCutSet->ppCuts[pCutSet->nCuts] == pCut );
     for ( i = 0; i < pCutSet->nCuts; i++ )
     {
         pTemp = pCutSet->ppCuts[i];
+// if(print){
+//     printf("    comparint cut: ");
+//     for(int j=0; j<pTemp->nLeaves; j++)
+//         printf("%d ", pTemp->pLeaves[j]);
+//     printf("\n");
+// }
+// fSaveCut0 = 0;
         if ( pTemp->nLeaves > pCut->nLeaves )
         {
             // do not fiter the first cut

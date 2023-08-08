@@ -242,6 +242,7 @@ void If_CutPropagateRequired( If_Man_t * p, If_Obj_t * pObj, If_Cut_t * pCut, fl
         }
         else
         {
+            // pi
             Required = ObjRequired;
             If_CutForEachLeaf( p, pCut, pLeaf, i )
                 pLeaf->Required = IF_MIN( pLeaf->Required, Required - (float)1.0 );
@@ -318,7 +319,6 @@ void If_ManComputeRequired( If_Man_t * p )
         // default here
         // get the global required times
         p->RequiredGlo = If_ManDelayMax( p, 0 );
-
         // consider the case when the required times are given
         if ( p->pPars->pTimesReq && !p->pPars->fAreaOnly )
         {
@@ -373,8 +373,10 @@ void If_ManComputeRequired( If_Man_t * p )
             else if ( p->pPars->DelayTargetNew > 0 ) // relax the required times 
                 p->RequiredGlo = p->pPars->DelayTargetNew;
             // do not propagate required times if area minimization is requested
-            if ( p->pPars->fAreaOnly ) 
+            if ( p->pPars->fAreaOnly ) {
+printf("DelayTarget: %.2f, RequiredGlo: %.2f\n", p->pPars->DelayTarget ,p->RequiredGlo );
                 return;
+            }
             // set the required times for the POs
             if ( p->pPars->fDoAverage )
             {

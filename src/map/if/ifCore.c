@@ -108,7 +108,8 @@ int If_ManPerformMappingComb( If_Man_t * p )
     int i;
     //p->vVisited2 = Vec_IntAlloc( 100 );
     //p->vMarks = Vec_StrStart( If_ManObjNum(p) );
-
+printf("begin If_ManPerformMappingComb\n");
+printf("fArea: %d, fAreaOnly: %d, fEdge: %d, fPower: %d\n", p->pPars->fArea, p->pPars->fAreaOnly, p->pPars->fEdge, p->pPars->fPower);
     // set arrival times and fanout estimates
     If_ManForEachCi( p, pObj, i )
     {

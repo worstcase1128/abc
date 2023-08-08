@@ -967,6 +967,7 @@ p->timeCanon += Abc_Clock() - clk;
     {
         Delay = If_CutComputeDelay( pIfMan, pCut, pCanonPerm, Vec_WrdEntry(p->vDelays, i) );
         Area  = Vec_StrEntry(p->vAreas, i);
+        // if ( iBestPo == -1 || BestArea > Area || (BestArea == Area && BestDelay > Delay) )
         if ( iBestPo == -1 || BestDelay > Delay || (BestDelay == Delay && BestArea > Area) )
         {
             iBestPo = i;
