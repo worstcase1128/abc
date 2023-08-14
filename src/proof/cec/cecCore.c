@@ -374,6 +374,7 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
 
     // prepare the managers
     // SAT sweeping
+    // pAig is the original AIG, p->pAig is the reduced one
     p = Cec_ManFraStart( pIni, pPars );
     if ( pPars->fDualOut )
         pPars->fColorDiff = 1;

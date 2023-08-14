@@ -78,11 +78,14 @@ Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
         if ( Gia_ObjRepr(p->pAig, i) == GIA_VOID || Gia_ObjFailed(p->pAig, i) )
             continue;
         assert( Gia_ObjRepr(p->pAig, i) < i );
-        iRepr = piCopies[Gia_ObjRepr(p->pAig, i)];
+        // iRepr = piCopies[Gia_ObjRepr(p->pAig, i)];
+        int oriRepr = Gia_ObjRepr(p->pAig, i);
+        iRepr = piCopies[oriRepr];
         if ( iRepr == -1 )
             continue;
         if ( Abc_LitRegular(iNode) == Abc_LitRegular(iRepr) )
             continue;
+        // printf("node %d and %d in same equiv class\n", i, oriRepr);
         if ( p->pPars->nLevelMax && 
             (Gia_ObjLevelId(p->pAig, i)  > p->pPars->nLevelMax || 
              Gia_ObjLevelId(p->pAig, Abc_Lit2Var(iRepr)) > p->pPars->nLevelMax) )
@@ -109,6 +112,7 @@ Gia_Man_t * Cec_ManFraSpecReduction( Cec_ManFra_t * p )
             continue;
         // produce speculative miter
         iMiter = Gia_ManHashXor( pNew, iNode, piCopies[i] );
+        printf("adding miter between %d(%d) and %d(%d)\n", iNode, Abc_Lit2Var(iNode), piCopies[i], Abc_Lit2Var(piCopies[i]));
         Gia_ManAppendCo( pNew, iMiter );
         Vec_IntPush( p->vXorNodes, Gia_ObjRepr(p->pAig, i) );
         Vec_IntPush( p->vXorNodes, i );
