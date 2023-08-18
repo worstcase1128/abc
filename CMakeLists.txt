@@ -6,7 +6,7 @@ include(CheckCXXCompilerFlag)
 
 function(addprefix var prefix)
     foreach( s ${ARGN} )
-        list(APPEND tmp "-I${s}")
+        list(APPEND tmp "${prefix}${s}")
     endforeach()
     set(${var} ${tmp} PARENT_SCOPE)
 endfunction()
@@ -32,14 +32,43 @@ endfunction()
 
 project(abc)
 
-if(READLINE_FOUND MATCHES TRUE)
-    addprefix(ABC_READLINE_INCLUDES_FLAGS "-I" ${READLINE_INCLUDE})
+find_path(READLINE_ROOT_DIR
+    NAMES include/readline/readline.h
+)
+
+find_path(READLINE_INCLUDE_DIR
+    NAMES readline/readline.h
+    HINTS ${READLINE_ROOT_DIR}/include
+)
+
+find_path(READLINE_LIBRARY
+    NAMES libreadline.so
+    HINTS ${READLINE_ROOT_DIR}/lib
+    PATHS /usr/lib64 /usr/lib
+)
+
+if(READLINE_INCLUDE_DIR AND READLINE_LIBRARY)
+    set(READLINE_FOUND TRUE)
+    string(APPEND READLINE_LIBRARY " -lreadline -lncurses")
+else()
+    set(READLINE_FOUND FALSE)
+endif()
+
+if(READLINE_FOUND)
+    message(STATUS "readline found!")
+    addprefix(ABC_READLINE_INCLUDES_FLAGS "-I" ${READLINE_INCLUDE_DIR})
     string(REPLACE ";" " " ABC_READLINE_INCLUDES_FLAGS "${ABC_READLINE_INCLUDES_FLAGS}")
     list(APPEND ABC_READLINE_FLAGS "ABC_READLINE_INCLUDES=${ABC_READLINE_INCLUDES_FLAGS}")
 
-    string(REPLACE ";" " " ABC_READLINE_LIBRARIES_FLAGS "${READLINE_LIBRARIES}")
+    addprefix(ABC_READLINE_LIBRARIES_FLAGS "-L" ${READLINE_LIBRARY})
+    string(REPLACE ";" " " ABC_READLINE_LIBRARIES_FLAGS "${ABC_READLINE_LIBRARIES_FLAGS}")
     list(APPEND ABC_READLINE_FLAGS "ABC_READLINE_LIBRARIES=${ABC_READLINE_LIBRARIES_FLAGS}")
-elseif(READLINE_FOUND MATCHES FALSE)
+
+elseif(ABC_USE_NO_READLINE)
+    message(STATUS "Manually disable readline library!")
+    list(APPEND ABC_READLINE_FLAGS "ABC_USE_NO_READLINE=1")
+else()
+    message(STATUS "readline not found!")
     list(APPEND ABC_READLINE_FLAGS "ABC_USE_NO_READLINE=1")
 endif()
 
@@ -108,3 +137,6 @@ add_library(libabc-pic EXCLUDE_FROM_ALL ${ABC_SRC})
 abc_properties(libabc-pic PUBLIC)
 set_property(TARGET libabc-pic PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET libabc-pic PROPERTY OUTPUT_NAME abc-pic)
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
