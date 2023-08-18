@@ -47,7 +47,7 @@ src/python/pyabc.py
 src/python/pyabc_wrap.*
 
 .idea/
-build/
+build*/
 
 *.rej
 *.orig
@@ -62,3 +62,6 @@ tags
 /cmake
 /cscope
 /logic_my_suite
+
+*.eqn
+*.blif
