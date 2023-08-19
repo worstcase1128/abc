@@ -1229,20 +1229,26 @@ Vec_Int_t * Lms_GiaCollectUsefulCos( Lms_Man_t * p )
     return vUseful;
 }
 // collect non-dominated COs
-Vec_Int_t * Lms_GiaFindNonRedundantCos( Lms_Man_t * p )
+Vec_Int_t * Lms_GiaFindNonRedundantCos( Lms_Man_t * p, int fArea, int fDisableFilter )
 {
     Vec_Int_t * vRemain;
     Vec_Int_t * vUseful;
     Vec_Wrd_t * vDelays;
+    Vec_Str_t * vAreas = NULL;
     int i, k, EntryI, EntryK;
     word D1, D2;
+    char A1 = 0, A2 = 0;
     vDelays = Lms_GiaDelays( p->pGia );
     vUseful = Lms_GiaCollectUsefulCos( p );
+    if (fArea)
+        vAreas = Lms_GiaAreas( p->pGia );
     Vec_IntForEachEntry( vUseful, EntryI, i )
     {
         if ( EntryI < 0 )
             continue;
         D1 = Vec_WrdEntry(vDelays, EntryI);
+        if (fArea)
+            A1 = Vec_StrEntry(vAreas, EntryI);
         assert( D1 > 0 );
         Vec_IntForEachEntryStart( vUseful, EntryK, k, i+1 )
         {
@@ -1251,13 +1257,19 @@ Vec_Int_t * Lms_GiaFindNonRedundantCos( Lms_Man_t * p )
             if ( EntryK == -2 )
                 continue;
             D2 = Vec_WrdEntry(vDelays, EntryK);
+            if (fArea)
+                A2 = Vec_StrEntry(vAreas, EntryK);
             assert( D2 > 0 );
-            if ( Lms_DelayDom(D1, D2, Gia_ManCiNum(p->pGia)) ) // D1 dominate D2
+            if ( fDisableFilter )
+                continue;
+            if ( Lms_DelayDom(D1, D2, Gia_ManCiNum(p->pGia)) &&
+                 (!fArea || A1 <= A2) ) // D1 dominate D2
             {
                 Vec_IntWriteEntry( vUseful, k, -2 );
                 continue;
             }
-            if ( Lms_DelayDom(D2, D1, Gia_ManCiNum(p->pGia)) ) // D2 dominate D1
+            if ( Lms_DelayDom(D2, D1, Gia_ManCiNum(p->pGia)) &&
+                 (!fArea || A2 <= A1) ) // D2 dominate D1
             {
                 Vec_IntWriteEntry( vUseful, i, -2 );
                 break;
@@ -1274,7 +1286,7 @@ Vec_Int_t * Lms_GiaFindNonRedundantCos( Lms_Man_t * p )
     return vRemain;
 }
 // replace GIA and vTruthIds by filtered ones
-void Lms_GiaNormalize( Lms_Man_t * p )
+void Lms_GiaNormalize( Lms_Man_t * p, int fArea, int fDisableFilter )
 {
     Gia_Man_t * pGiaNew;
     Gia_Obj_t * pObj;
@@ -1282,7 +1294,7 @@ void Lms_GiaNormalize( Lms_Man_t * p )
     Vec_Int_t * vTruthIdsNew;
     int i, Entry, Prev = -1, Next;
     // collect non-redundant COs
-    vRemain = Lms_GiaFindNonRedundantCos( p );
+    vRemain = Lms_GiaFindNonRedundantCos( p, fArea, fDisableFilter );
     // change these to be useful literals
     vTruthIdsNew = Vec_IntAlloc( Vec_IntSize(vRemain) );
     Vec_IntForEachEntry( vRemain, Entry, i )
@@ -1396,12 +1408,16 @@ int Abc_NtkRecIsRunning3()
 {
     return s_pMan3 != NULL;
 }
-Gia_Man_t * Abc_NtkRecGetGia3()
+Gia_Man_t * Abc_NtkRecGetGia3(int fArea, int fDisableFilter)
 {
     abctime clk = Abc_Clock();
+    if (fDisableFilter)
+        printf(">>> Disable normalization <<<\n");
+    else if (fArea)
+        printf(">>> Perform area-oriented normalization <<<\n");
     printf( "Before normalizing: Library has %d classes and %d AIG subgraphs with %d AND nodes.\n", 
         Vec_MemEntryNum(s_pMan3->vTtMem), Gia_ManPoNum(s_pMan3->pGia), Gia_ManAndNum(s_pMan3->pGia) );
-    Lms_GiaNormalize( s_pMan3 );
+    Lms_GiaNormalize( s_pMan3, fArea, fDisableFilter );
     printf( "After normalizing:  Library has %d classes and %d AIG subgraphs with %d AND nodes.\n", 
         Vec_MemEntryNum(s_pMan3->vTtMem), Gia_ManPoNum(s_pMan3->pGia), Gia_ManAndNum(s_pMan3->pGia) );
     Abc_PrintTime( 1, "Normalization runtime", Abc_Clock() - clk );

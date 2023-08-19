@@ -854,7 +854,7 @@ extern ABC_DLL void               Abc_NtkRecStart3( Gia_Man_t * p, int nVars, in
 extern ABC_DLL void               Abc_NtkRecStop3();
 extern ABC_DLL void               Abc_NtkRecAdd3( Abc_Ntk_t * pNtk, int fUseSOPB );
 extern ABC_DLL void               Abc_NtkRecPs3(int fPrintLib);
-extern ABC_DLL Gia_Man_t *        Abc_NtkRecGetGia3();
+extern ABC_DLL Gia_Man_t *        Abc_NtkRecGetGia3(int fArea, int fDisableFilter);
 extern ABC_DLL int                Abc_NtkRecIsRunning3();
 extern ABC_DLL void               Abc_NtkRecLibMerge3(Gia_Man_t * pGia);
 extern ABC_DLL int                Abc_NtkRecInputNum3();

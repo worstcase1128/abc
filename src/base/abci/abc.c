@@ -17900,10 +17900,12 @@ int Abc_CommandRecDump3( Abc_Frame_t * pAbc, int argc, char ** argv )
     Gia_Man_t * pGia;
     int fAscii = 0;
     int fBinary = 0;
+    int fArea = 0;
+    int fDisableFilter = 0;
     int c;
 
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "abh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "abrfh" ) ) != EOF )
     {
         switch ( c )
         {
@@ -17912,6 +17914,12 @@ int Abc_CommandRecDump3( Abc_Frame_t * pAbc, int argc, char ** argv )
             break;
         case 'b':
             fBinary ^= 1;
+            break;
+        case 'r':
+            fArea ^= 1;
+            break;
+        case 'f':
+            fDisableFilter ^= 1;
             break;
         case 'h':
             goto usage;
@@ -17940,7 +17948,7 @@ int Abc_CommandRecDump3( Abc_Frame_t * pAbc, int argc, char ** argv )
         Abc_NtkRecDumpTt3( FileName, 1 );
     else
     {
-        pGia = Abc_NtkRecGetGia3();
+        pGia = Abc_NtkRecGetGia3(fArea, fDisableFilter);
         if( pGia == NULL )
         {
             Abc_Print( 0, "Library AIG is not available.\n" );
@@ -17960,6 +17968,8 @@ usage:
     Abc_Print( -2, "\t-h     : print the command usage\n");
     Abc_Print( -2, "\t-a     : toggles dumping TTs into an ASCII file [default = %s]\n", fAscii? "yes": "no" );
     Abc_Print( -2, "\t-b     : toggles dumping TTs into a binary file [default = %s]\n", fBinary? "yes": "no" );
+    Abc_Print( -2, "\t-r     : toggles area/delay-oriented filtering [default = %s]\n", fArea? "area": "delay" );
+    Abc_Print( -2, "\t-f     : toggles disable filtering [default = %s]\n", fDisableFilter? "yes": "no" );
     Abc_Print( -2, "\t<file> : AIGER file to write the library\n");
     return 1;
 }
