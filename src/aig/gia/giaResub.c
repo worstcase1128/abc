@@ -1418,28 +1418,6 @@ int Gia_ManResubPerform_rec( Gia_ResbMan_t * p, int nLimit, int Depth )
         }
         if ( Max2 == 0 )
             return -1;
-/*
-        if ( Max2 == TopTwoW[0] || Max2 == TopTwoW[1] )
-        {
-            int fUseOr  = Max2 == TopTwoW[0];
-            int iDiv    = Vec_IntEntry( p->vUnatePairs[!fUseOr], 0 );
-            int fComp   = Abc_LitIsCompl(iDiv);
-            Gia_ManDeriveDivPair( iDiv, p->vDivs, p->nWords, p->pDivA );
-            Abc_TtAndSharp( p->pSets[fUseOr], p->pSets[fUseOr], p->pDivA, p->nWords, !fComp );
-            if ( p->fVerbose )
-                printf( "\n      " ); 
-            iResLit = Gia_ManResubPerform_rec( p, nLimit-2 );
-            if ( iResLit >= 0 ) 
-            {
-                int iNode = nVars + Vec_IntSize(p->vGates)/2;
-                int iDiv0 = Abc_Lit2Var(iDiv) & 0x7FFF;   
-                int iDiv1 = Abc_Lit2Var(iDiv) >> 15;      
-                Vec_IntPushTwo( p->vGates, iDiv0, iDiv1 );
-                Vec_IntPushTwo( p->vGates, Abc_LitNotCond(iResLit, fUseOr), Abc_Var2Lit(iNode, !fComp) );
-                return Abc_Var2Lit( iNode+1, fUseOr );
-            }
-        }
-*/
     }
     else
     {
@@ -1465,25 +1443,6 @@ int Gia_ManResubPerform_rec( Gia_ResbMan_t * p, int nLimit, int Depth )
         }
         if ( Max1 == 0 )
             return -1;
-/*
-        if ( Max1 == TopOneW[0] || Max1 == TopOneW[1] )
-        {
-            int fUseOr  = Max1 == TopOneW[0];
-            int iDiv    = Vec_IntEntry( p->vUnateLits[!fUseOr], 0 );
-            int fComp   = Abc_LitIsCompl(iDiv);
-            word * pDiv = (word *)Vec_PtrEntry( p->vDivs, Abc_Lit2Var(iDiv) );
-            Abc_TtAndSharp( p->pSets[fUseOr], p->pSets[fUseOr], pDiv, p->nWords, !fComp );
-            if ( p->fVerbose )
-                printf( "\n      " ); 
-            iResLit = Gia_ManResubPerform_rec( p, nLimit-1 );
-            if ( iResLit >= 0 ) 
-            {
-                int iNode = nVars + Vec_IntSize(p->vGates)/2;
-                Vec_IntPushTwo( p->vGates, Abc_LitNot(iDiv), Abc_LitNotCond(iResLit, fUseOr) );
-                return Abc_Var2Lit( iNode, fUseOr );
-            }
-        }
-*/
     }
     return -1;
 }
@@ -1760,23 +1719,23 @@ Vec_Ptr_t * Gia_ManDeriveDivs( Vec_Wrd_t * vSims, int nWords )
 }
 Gia_Man_t * Gia_ManResub2( Gia_Man_t * pGia, int nNodes, int nSupp, int nDivs, int iChoice, int fUseXor, int fVerbose, int fVeryVerbose )
 {
-    return NULL;
-}
-Gia_Man_t * Gia_ManResub1( char * pFileName, int nNodes, int nSupp, int nDivs, int iChoice, int fUseXor, int fVerbose, int fVeryVerbose )
-{
     int nWords = 0;
+printf("6\n");
     Gia_Man_t * pMan   = NULL;
-    Vec_Wrd_t * vSims  = Vec_WrdReadHex( pFileName, &nWords, 1 );
-    Vec_Ptr_t * vDivs  = vSims ? Gia_ManDeriveDivs( vSims, nWords ) : NULL;
+    Vec_Wrd_t * vSims  = NULL;
+    Vec_Ptr_t * vDivs  = NULL;
     Gia_ResbMan_t * p = Gia_ResbAlloc( nWords );
     //Gia_ManCheckResub( vDivs, nWords );
+printf("7 size %d\n", Vec_PtrSize(vDivs));
     if ( Vec_PtrSize(vDivs) >= (1<<14) )
     {
         printf( "Reducing all divs from %d to %d.\n", Vec_PtrSize(vDivs), (1<<14)-1 );
         Vec_PtrShrink( vDivs, (1<<14)-1 );
     }
+printf("8\n");
     assert( Vec_PtrSize(vDivs) < (1<<14) );
     Gia_ManResubPerform( p, vDivs, nWords, 100, 50, iChoice, fUseXor, 1, 1, 0 );
+printf("9\n");
     if ( Vec_IntSize(p->vGates) )
     {
         Vec_Wec_t * vGates = Vec_WecStart(1);
@@ -1789,6 +1748,41 @@ Gia_Man_t * Gia_ManResub1( char * pFileName, int nNodes, int nSupp, int nDivs, i
     Gia_ResbFree( p );
     Vec_PtrFree( vDivs );
     Vec_WrdFree( vSims );
+printf("10\n");
+    return pMan;
+}
+Gia_Man_t * Gia_ManResub1( char * pFileName, int nNodes, int nSupp, int nDivs, int iChoice, int fUseXor, int fVerbose, int fVeryVerbose )
+{
+    int nWords = 0;
+printf("1\n");
+    Gia_Man_t * pMan   = NULL;
+    Vec_Wrd_t * vSims  = Vec_WrdReadHex( pFileName, &nWords, 1 );
+    Vec_Ptr_t * vDivs  = vSims ? Gia_ManDeriveDivs( vSims, nWords ) : NULL;
+    Gia_ResbMan_t * p = Gia_ResbAlloc( nWords );
+    //Gia_ManCheckResub( vDivs, nWords );
+printf("2\n");
+    if ( Vec_PtrSize(vDivs) >= (1<<14) )
+    {
+        printf( "Reducing all divs from %d to %d.\n", Vec_PtrSize(vDivs), (1<<14)-1 );
+        Vec_PtrShrink( vDivs, (1<<14)-1 );
+    }
+printf("3\n");
+    assert( Vec_PtrSize(vDivs) < (1<<14) );
+    Gia_ManResubPerform( p, vDivs, nWords, 100, 50, iChoice, fUseXor, 1, 1, 0 );
+printf("4\n");
+    if ( Vec_IntSize(p->vGates) )
+    {
+        Vec_Wec_t * vGates = Vec_WecStart(1);
+        Vec_IntAppend( Vec_WecEntry(vGates, 0), p->vGates );
+        pMan = Gia_ManConstructFromGates( vGates, Vec_PtrSize(vDivs) );
+        Vec_WecFree( vGates );
+    }
+    else
+        printf( "Decomposition did not succeed.\n" );
+    Gia_ResbFree( p );
+    Vec_PtrFree( vDivs );
+    Vec_WrdFree( vSims );
+printf("5\n");
     return pMan;
 }
 

@@ -531,7 +531,7 @@ extern float           If_CutPowerFlow( If_Man_t * p, If_Cut_t * pCut, If_Obj_t 
 extern float           If_CutAverageRefs( If_Man_t * p, If_Cut_t * pCut );
 extern float           If_CutAreaDeref( If_Man_t * p, If_Cut_t * pCut );
 extern float           If_CutAreaRef( If_Man_t * p, If_Cut_t * pCut );
-extern float           If_CutAreaDerefed( If_Man_t * p, If_Cut_t * pCut );
+extern float           If_CutAreaDerefed( If_Man_t * p, If_Cut_t * pCut, If_Obj_t * pRoot);
 extern float           If_CutAreaRefed( If_Man_t * p, If_Cut_t * pCut );
 extern float           If_CutEdgeDeref( If_Man_t * p, If_Cut_t * pCut );
 extern float           If_CutEdgeRef( If_Man_t * p, If_Cut_t * pCut );

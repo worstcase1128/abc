@@ -61,10 +61,8 @@ Abc_Ntk_t * Abc_NtkBalance( Abc_Ntk_t * pNtk, int fDuplicate, int fSelective, in
         Abc_NtkStartReverseLevels( pNtk, 0 );
         Abc_NtkMarkCriticalNodes( pNtk );
     }
-    // perform balancing
     pNtkAig = Abc_NtkStartFrom( pNtk, ABC_NTK_STRASH, ABC_FUNC_AIG );
-    // transfer HAIG
-//    Abc_NtkHaigTranfer( pNtk, pNtkAig );
+
     // perform balancing
     Abc_NtkBalancePerform( pNtk, pNtkAig, fDuplicate, fSelective, fUpdateLevel );
     Abc_NtkFinalize( pNtk, pNtkAig );

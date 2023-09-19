@@ -164,6 +164,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
     If_Set_t * pCutSet;
     If_Cut_t * pCut0, * pCut1, * pCut;
     If_Cut_t * pCut0R, * pCut1R;
+    If_Obj_t * tmpObj;
     int fFunc0R, fFunc1R;
     int i, k, v, iCutDsd, fChange;
     int fSave0 = p->pPars->fDelayOpt || p->pPars->fDelayOptLut || p->pPars->fDsdBalance || p->pPars->fUserRecLib || p->pPars->fUserSesLib || 
@@ -178,12 +179,14 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
     else if ( Mode == 1 )
         pObj->EstRefs = (float)((2.0 * pObj->EstRefs + pObj->nRefs) / 3.0);
     // deref the selected cut
-// if(pObj->Id==209 && Mode==1 && p->SortMode == 1){
-//     printf("begin dered: %d\n", pObj->nRefs);
-// }
+
     if ( Mode && pObj->nRefs > 0 )
         If_CutAreaDeref( p, If_ObjCutBest(pObj) );
-
+if(pObj->Id==43){
+If_ManForEachObj( p, tmpObj, i ){
+    if(tmpObj->Id==18)
+        printf("ref of 18: %d\n", tmpObj->nRefs);
+}}
     // prepare the cutset
     pCutSet = If_ManSetupNodeCutSet( p, pObj );
 
@@ -222,7 +225,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         if ( pCut->Delay > pObj->Required + 2*p->fEpsilon )
             Abc_Print( 1, "If_ObjPerformMappingAnd(): Warning! Node with ID %d has delay (%f) exceeding the required times (%f).\n", 
                 pObj->Id, pCut->Delay, pObj->Required + p->fEpsilon );
-        pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut ) : If_CutAreaFlow( p, pCut );
+        pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut, pObj  ) : If_CutAreaFlow( p, pCut );
         if ( p->pPars->fEdge )
             pCut->Edge = (Mode == 2)? If_CutEdgeDerefed( p, pCut ) : If_CutEdgeFlow( p, pCut );
         if ( p->pPars->fPower )
@@ -231,7 +234,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         if ( !fPreprocess || pCut->nLeaves <= 1 )
             If_CutCopy( p, pCutSet->ppCuts[pCutSet->nCuts++], pCut );
     }   // if ( !fFirst )
-// if(pObj->Id==60285){
+// if(pObj->Id==18){
 // printf("print pCut0: \n");
 // If_ObjForEachCut( pObj->pFanin0, pCut, i )
 // {
@@ -483,7 +486,7 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
         if ( Mode && pCut->Delay > pObj->Required + p->fEpsilon )
             continue;
         // compute area of the cut (this area may depend on the application specific cost)
-        pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut ) : If_CutAreaFlow( p, pCut );
+        pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut, pObj ) : If_CutAreaFlow( p, pCut );
         if ( p->pPars->fEdge )
             pCut->Edge = (Mode == 2)? If_CutEdgeDerefed( p, pCut ) : If_CutEdgeFlow( p, pCut );
         if ( p->pPars->fPower )
@@ -500,13 +503,13 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
     }   // traverse all cuts combinations of two fanins
     assert( pCutSet->nCuts > 0 );
 
-// if(pObj->Id==14641){
-//     printf("after sorting node: %d, nValidCuts: %d, nCutsMax: %d\n", pObj->Id, pCutSet->nCuts, pCutSet->nCutsMax);
-//     for(int i=0; i<pCutSet->nCuts; i++){
-//         If_Cut_t * pCut = pCutSet->ppCuts[i];
-//         for(int j=0; j<pCut->nLeaves; j++)
-//             printf("%d ", pCut->pLeaves[j]);
-//         printf(", %.0f %.2f %.2f %u \n", pCut->Delay, pCut->Area, pCut->Edge, pCut->nLeaves );
+if(pObj->Id==43){
+    printf("after sorting node: %d, nValidCuts: %d, nCutsMax: %d, ref: %d\n", pObj->Id, pCutSet->nCuts, pCutSet->nCutsMax, pObj->nRefs);
+    for(int i=0; i<pCutSet->nCuts; i++){
+        If_Cut_t * pCut = pCutSet->ppCuts[i];
+        for(int j=0; j<pCut->nLeaves; j++)
+            printf("%d ", pCut->pLeaves[j]);
+        printf(", %.0f %.2f %.2f %u \n", pCut->Delay, pCut->Area, pCut->Edge, pCut->nLeaves );
             // If_Obj_t * pLeaf;
             // float Flow, AddOn;
             // int k;
@@ -519,8 +522,8 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
             //         printf(" %d (2 %.2f %.2f %.2f)", pCut->pLeaves[k], If_ObjCutBest(pLeaf)->Area, If_ObjCutBest(pLeaf)->Edge, pLeaf->EstRefs);
             // }
             // printf("\n");  
-//     }
-// }
+    }
+}
     // update the best cut
     if ( !fPreprocess || pCutSet->ppCuts[0]->Delay <= pObj->Required + p->fEpsilon )
     {
@@ -538,10 +541,24 @@ void If_ObjPerformMappingAnd( If_Man_t * p, If_Obj_t * pObj, int Mode, int fPrep
 //        p->nBestCutSmall[0]++;
 //    else if ( If_ObjCutBest(pObj)->nLeaves == 1 )
 //        p->nBestCutSmall[1]++;
-
+// If_ManForEachObj( p, tmpObj, i ){
+//     if(tmpObj->Id==18 && tmpObj->nRefs)
+//         printf("before ref of %d: %d at %d\n", tmpObj->Id, tmpObj->nRefs, pObj->Id);
+// }
     // ref the selected cut
     if ( Mode && pObj->nRefs > 0 )
         If_CutAreaRef( p, If_ObjCutBest(pObj) );
+// if ( Mode && pObj->nRefs > 0 ){
+//     If_CutForEachLeaf( p, If_ObjCutBest(pObj), tmpObj, i ){
+//         if(tmpObj->Id==18)
+//             printf("ref 19 : %d at %d\n", pObj->Id, tmpObj->nRefs);
+//     }
+
+// }
+// If_ManForEachObj( p, tmpObj, i ){
+//     if(tmpObj->Id==18 && tmpObj->nRefs)
+//         printf("after ref of %d: %d at %d\n", tmpObj->Id, tmpObj->nRefs, pObj->Id);
+// }
     if ( If_ObjCutBest(pObj)->fUseless )
         Abc_Print( 1, "The best cut is useless.\n" );
     // call the user specified function for each cut
@@ -608,7 +625,7 @@ void If_ObjPerformMappingChoice( If_Man_t * p, If_Obj_t * pObj, int Mode, int fP
             // set the phase attribute
             pCut->fCompl = pObj->fPhase ^ pTemp->fPhase;
             // compute area of the cut (this area may depend on the application specific cost)
-            pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut ) : If_CutAreaFlow( p, pCut );
+            pCut->Area = (Mode == 2)? If_CutAreaDerefed( p, pCut, pObj ) : If_CutAreaFlow( p, pCut );
             if ( p->pPars->fEdge )
                 pCut->Edge = (Mode == 2)? If_CutEdgeDerefed( p, pCut ) : If_CutEdgeFlow( p, pCut );
             if ( p->pPars->fPower )
@@ -665,7 +682,7 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
         p->SortMode = 2;
     else
         p->SortMode = 0;
-// printf("sortMode: %d\n", p->SortMode);
+printf("mapMode: %d, sortMode: %d, fPreprocess: %d, fFirst: %d\n", Mode, p->SortMode, fPreprocess, fFirst);
     // set the cut number
     p->nCutsUsed   = nCutsUsed;
     p->nCutsMerged = 0;
@@ -737,7 +754,8 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
 //        p->nCutsMax, 1.0 * p->nCutsMerged / If_ManAndNum(p) );
     }
 
-    int printBestStructure = 0;
+    int printBestStructure = 1;
+    // if(printBestStructure && Mode==2 && p->SortMode==1){
     if(printBestStructure){
         printf("printBestStructure\n");
         If_Obj_t * pIfObj;
@@ -752,7 +770,8 @@ int If_ManPerformMappingRound( If_Man_t * p, int nCutsUsed, int Mode, int fPrepr
                 pCutBest = If_ObjCutBest( pIfObj );
                 int s = getInternalNode(p, pIfObj, pCutBest, &BestPo);
                 // printf("(%d %d %d %.2lf %.2lf) ", i, BestPo, pIfObj->nRefs, pIfObj->Required, pCutBest->Area, pCutBest->Edge);
-                printf("(%d %.0lf %.2lf) ", i, pCutBest->Delay, pCutBest->Area);
+                printf("(%d %.0lf %.2lf %d) ", i, pCutBest->Delay, pCutBest->Area, pIfObj->nRefs);
+                // if(pCutBest->Area>10)   printf("\n!!!!!!!!!!!!!!!!!!!!!!\n");
                 // if(i==696 || i==702 || i==707){
                 //     for(int j=0; j<pCutBest->nLeaves; j++)
                 //         printf("|%d ", pCutBest->pLeaves[j]);

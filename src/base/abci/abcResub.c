@@ -62,6 +62,8 @@ struct Abc_ManRes_t_
     // other data
     Vec_Ptr_t        * vTemp;      // temporary array of nodes
     // runtime statistics
+    abctime            timeOther;
+    abctime            timePre;
     abctime            timeCut;
     abctime            timeTruth;
     abctime            timeRes;
@@ -147,6 +149,7 @@ int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutMax, int nStepsMax, int nMinS
     abctime clk, clkStart = Abc_Clock();
     int i, nNodes;
 
+
     assert( Abc_NtkIsStrash(pNtk) );
 
     // cleanup the AIG
@@ -154,6 +157,10 @@ int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutMax, int nStepsMax, int nMinS
     // start the managers
     pManCut = Abc_NtkManCutStart( nCutMax, 100000, 100000, 100000 );
     pManRes = Abc_ManResubStart( nCutMax, ABC_RS_DIV1_MAX );
+    //reset time
+    pManRes->timeOther=pManRes->timePre=pManRes->timeCut=pManRes->timeTruth=pManRes->timeRes=0;
+    pManRes->timeDiv=pManRes->timeMffc=pManRes->timeSim=pManRes->timeRes1=pManRes->timeResD=pManRes->timeRes=pManRes->timeRes3= 0;
+    pManRes->timeNtk=pManRes->timeTotal = 0;
     if ( nLevelsOdc > 0 )
     pManOdc = Abc_NtkDontCareAlloc( nCutMax, nLevelsOdc, fVerbose, fVeryVerbose );
 
@@ -165,7 +172,7 @@ int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutMax, int nStepsMax, int nMinS
         Abc_NtkForEachLatch(pNtk, pNode, i)
             pNode->pNext = (Abc_Obj_t *)pNode->pData;
     }
-
+pManRes->timePre = Abc_Clock() - clkStart;
     // resynthesize each node once
     pManRes->nNodesBeg = Abc_NtkNodeNum(pNtk);
     nNodes = Abc_NtkObjNumMax(pNtk);
@@ -371,17 +378,17 @@ void Abc_ManResubStop( Abc_ManRes_t * p )
 ***********************************************************************/
 void Abc_ManResubPrint( Abc_ManRes_t * p )
 {
-    printf( "Used constants    = %6d.             ", p->nUsedNodeC );          ABC_PRT( "Cuts  ", p->timeCut );
-    printf( "Used replacements = %6d.             ", p->nUsedNode0 );          ABC_PRT( "Resub ", p->timeRes );
-    printf( "Used single ORs   = %6d.             ", p->nUsedNode1Or );        ABC_PRT( " Div  ", p->timeDiv );
-    printf( "Used single ANDs  = %6d.             ", p->nUsedNode1And );       ABC_PRT( " Mffc ", p->timeMffc );
-    printf( "Used double ORs   = %6d.             ", p->nUsedNode2Or );        ABC_PRT( " Sim  ", p->timeSim );
-    printf( "Used double ANDs  = %6d.             ", p->nUsedNode2And );       ABC_PRT( " 1    ", p->timeRes1 );
-    printf( "Used OR-AND       = %6d.             ", p->nUsedNode2OrAnd );     ABC_PRT( " D    ", p->timeResD );
-    printf( "Used AND-OR       = %6d.             ", p->nUsedNode2AndOr );     ABC_PRT( " 2    ", p->timeRes2 );
-    printf( "Used OR-2ANDs     = %6d.             ", p->nUsedNode3OrAnd );     ABC_PRT( "Truth ", p->timeTruth ); //ABC_PRT( " 3    ", p->timeRes3 );
-    printf( "Used AND-2ORs     = %6d.             ", p->nUsedNode3AndOr );     ABC_PRT( "AIG   ", p->timeNtk );
-    printf( "TOTAL             = %6d.             ", p->nUsedNodeC +
+    printf( "Used constants    = %6d.             \n", p->nUsedNodeC );          
+    printf( "Used replacements = %6d.             \n", p->nUsedNode0 );          
+    printf( "Used single ORs   = %6d.             \n", p->nUsedNode1Or );        
+    printf( "Used single ANDs  = %6d.             \n", p->nUsedNode1And );       
+    printf( "Used double ORs   = %6d.             \n", p->nUsedNode2Or );        
+    printf( "Used double ANDs  = %6d.             \n", p->nUsedNode2And );       
+    printf( "Used OR-AND       = %6d.             \n", p->nUsedNode2OrAnd );     
+    printf( "Used AND-OR       = %6d.             \n", p->nUsedNode2AndOr );     
+    printf( "Used OR-2ANDs     = %6d.             \n", p->nUsedNode3OrAnd );     
+    printf( "Used AND-2ORs     = %6d.             \n", p->nUsedNode3AndOr );     
+    printf( "TOTAL             = %6d.             \n", p->nUsedNodeC +
                                                      p->nUsedNode0 +
                                                      p->nUsedNode1Or +
                                                      p->nUsedNode1And +
@@ -391,11 +398,26 @@ void Abc_ManResubPrint( Abc_ManRes_t * p )
                                                      p->nUsedNode2AndOr +
                                                      p->nUsedNode3OrAnd +
                                                      p->nUsedNode3AndOr
-                                                   );                          ABC_PRT( "TOTAL ", p->timeTotal );
+                                                   );                          
     printf( "Total leaves   = %8d.\n", p->nTotalLeaves );
     printf( "Total divisors = %8d.\n", p->nTotalDivs );
 //    printf( "Total gain     = %8d.\n", p->nTotalGain );
-    printf( "Gain           = %8d. (%6.2f %%).\n", p->nNodesBeg-p->nNodesEnd, 100.0*(p->nNodesBeg-p->nNodesEnd)/p->nNodesBeg );
+    printf( "Gain           = %8d. (%6.2f %%).\n\n", p->nNodesBeg-p->nNodesEnd, 100.0*(p->nNodesBeg-p->nNodesEnd)/p->nNodesBeg );
+
+// ABC_PRT( "Other   ", p->timeOther );
+ABC_PRT( "Pre     ", p->timePre );
+ABC_PRT( "Cuts    ", p->timeCut );
+ABC_PRT( "Resub   ", p->timeRes );
+ABC_PRT( "   Mffc ", p->timeMffc );
+ABC_PRT( "   Div  ", p->timeDiv );
+ABC_PRT( "   Sim  ", p->timeSim );
+ABC_PRT( "   1    ", p->timeRes1 );
+ABC_PRT( "   D    ", p->timeResD );
+ABC_PRT( "   2    ", p->timeRes2 );
+ABC_PRT( "   3    ", p->timeRes3 );
+ABC_PRT( "Truth   ", p->timeTruth );
+ABC_PRT( "AIG     ", p->timeNtk );
+ABC_PRT( "TOTAL   ", p->timeTotal );
 }
 
 
@@ -845,8 +867,8 @@ void Abc_ManResubDivsS( Abc_ManRes_t * p, int Required )
     Abc_Obj_t * pObj;
     unsigned * puData, * puDataR;
     int i, w;
-    Vec_PtrClear( p->vDivs1UP );
-    Vec_PtrClear( p->vDivs1UN );
+    Vec_PtrClear( p->vDivs1UP );    // UP for unate positive; if pObj implies pRoot, e.g pRoot: 1x1x pObj:1010 
+    Vec_PtrClear( p->vDivs1UN );    // if pRoot implies pObj
     Vec_PtrClear( p->vDivs1B );
     puDataR = (unsigned *)p->pRoot->pData;
     Vec_PtrForEachEntryStop( Abc_Obj_t *, p->vDivs, pObj, i, p->nDivs )
@@ -970,6 +992,7 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
                 }
                 for ( w = 0; w < p->nWords; w++ )
 //                    if ( (puData0[w] | puData1[w]) & ~puDataR[w] )
+// FIXME: notice that here is or
                     if ( (puData0[w] | puData1[w]) & ~puDataR[w] & p->pCareSet[w] ) // care set
                         break;
                 if ( w == p->nWords )
@@ -1026,17 +1049,6 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
 
 
 
-/**Function*************************************************************
-
-  Synopsis    []
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
 Dec_Graph_t * Abc_ManResubQuit( Abc_ManRes_t * p )
 {
     Dec_Graph_t * pGraph;
@@ -1057,23 +1069,14 @@ Dec_Graph_t * Abc_ManResubQuit( Abc_ManRes_t * p )
     return pGraph;
 }
 
-/**Function*************************************************************
 
-  Synopsis    []
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
 Dec_Graph_t * Abc_ManResubDivs0( Abc_ManRes_t * p )
 {
     Abc_Obj_t * pObj;
     unsigned * puData, * puDataR;
     int i, w;
     puDataR = (unsigned *)p->pRoot->pData;
+    // for ( i = 0; (i < p->nDivs) && (((pObj) = (Abc_Obj_t *)Vec_PtrEntry(p->vDivs, i)), 1); i++ )
     Vec_PtrForEachEntryStop( Abc_Obj_t *, p->vDivs, pObj, i, p->nDivs )
     {
         puData = (unsigned *)pObj->pData;
@@ -1087,17 +1090,7 @@ Dec_Graph_t * Abc_ManResubDivs0( Abc_ManRes_t * p )
     return NULL;
 }
 
-/**Function*************************************************************
 
-  Synopsis    []
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
 Dec_Graph_t * Abc_ManResubDivs1( Abc_ManRes_t * p, int Required )
 {
     Abc_Obj_t * pObj0, * pObj1;
@@ -1105,9 +1098,11 @@ Dec_Graph_t * Abc_ManResubDivs1( Abc_ManRes_t * p, int Required )
     int i, k, w;
     puDataR = (unsigned *)p->pRoot->pData;
     // check positive unate divisors
+    // for ( i = 0; (i < Vec_PtrSize(p->vDivs1UP)) && (((pObj0) = (Abc_Obj_t *)Vec_PtrEntry(p->vDivs1UP, i)), 1); i++ )
     Vec_PtrForEachEntry( Abc_Obj_t *, p->vDivs1UP, pObj0, i )
     {
         puData0 = (unsigned *)Abc_ObjRegular(pObj0)->pData;
+        // for ( k = i + 1; (k < Vec_PtrSize(p->vDivs1UP)) && (((pObj1) = (Abc_Obj_t *)Vec_PtrEntry(p->vDivs1UP, k)), 1); k++ )
         Vec_PtrForEachEntryStart( Abc_Obj_t *, p->vDivs1UP, pObj1, k, i + 1 )
         {
             puData1 = (unsigned *)Abc_ObjRegular(pObj1)->pData;
@@ -1870,11 +1865,10 @@ void Abc_ManResubCleanup( Abc_ManRes_t * p )
 ***********************************************************************/
 Dec_Graph_t * Abc_ManResubEval( Abc_ManRes_t * p, Abc_Obj_t * pRoot, Vec_Ptr_t * vLeaves, int nSteps, int fUpdateLevel, int fVerbose )
 {
+    abctime clk, clk1, clk2, clk3, clk4;
     extern int Abc_NodeMffcInside( Abc_Obj_t * pNode, Vec_Ptr_t * vLeaves, Vec_Ptr_t * vInside );
     Dec_Graph_t * pGraph;
     int Required;
-    abctime clk;
-
     Required = fUpdateLevel? Abc_ObjRequiredLevel(pRoot) : ABC_INFINITY;
 
     assert( nSteps >= 0 );
@@ -1882,42 +1876,43 @@ Dec_Graph_t * Abc_ManResubEval( Abc_ManRes_t * p, Abc_Obj_t * pRoot, Vec_Ptr_t *
     p->pRoot = pRoot;
     p->nLeaves = Vec_PtrSize(vLeaves);
     p->nLastGain = -1;
-
     // collect the MFFC
 clk = Abc_Clock();
     p->nMffc = Abc_NodeMffcInside( pRoot, vLeaves, p->vTemp );
-p->timeMffc += Abc_Clock() - clk;
     assert( p->nMffc > 0 );
+clk1 = Abc_Clock();
+p->timeMffc += clk1 - clk;
 
     // collect the divisor nodes
-clk = Abc_Clock();
-    if ( !Abc_ManResubCollectDivs( p, pRoot, vLeaves, Required ) )
+    if ( !Abc_ManResubCollectDivs( p, pRoot, vLeaves, Required ) ){
+p->timeDiv += Abc_Clock() - clk1;
         return NULL;
-    p->timeDiv += Abc_Clock() - clk;
-
+    }
     p->nTotalDivs   += p->nDivs;
     p->nTotalLeaves += p->nLeaves;
+clk2 = Abc_Clock();
+p->timeDiv += clk2 - clk1;
 
     // simulate the nodes
-clk = Abc_Clock();
     Abc_ManResubSimulate( p->vDivs, p->nLeaves, p->vSims, p->nLeavesMax, p->nWords );
-p->timeSim += Abc_Clock() - clk;
-
 clk = Abc_Clock();
+p->timeSim += clk - clk2;
+
     // consider constants
     if ( (pGraph = Abc_ManResubQuit( p )) )
     {
         p->nUsedNodeC++;
         p->nLastGain = p->nMffc;
+p->timeRes1 += Abc_Clock() - clk;
         return pGraph;
     }
 
     // consider equal nodes
     if ( (pGraph = Abc_ManResubDivs0( p )) )
     {
-p->timeRes1 += Abc_Clock() - clk;
         p->nUsedNode0++;
         p->nLastGain = p->nMffc;
+p->timeRes1 += Abc_Clock() - clk;
         return pGraph;
     }
     if ( nSteps == 0 || p->nMffc == 1 )
@@ -1932,50 +1927,50 @@ p->timeRes1 += Abc_Clock() - clk;
     // consider one node
     if ( (pGraph = Abc_ManResubDivs1( p, Required )) )
     {
-p->timeRes1 += Abc_Clock() - clk;
         p->nLastGain = p->nMffc - 1;
+p->timeRes1 += Abc_Clock() - clk;
         return pGraph;
     }
-p->timeRes1 += Abc_Clock() - clk;
+clk1 = Abc_Clock();
+p->timeRes1 += clk1 - clk;
     if ( nSteps == 1 || p->nMffc == 2 )
         return NULL;
 
-clk = Abc_Clock();
     // consider triples
     if ( (pGraph = Abc_ManResubDivs12( p, Required )) )
     {
-p->timeRes2 += Abc_Clock() - clk;
+p->timeRes2 += Abc_Clock() - clk1;
         p->nLastGain = p->nMffc - 2;
         return pGraph;
     }
-p->timeRes2 += Abc_Clock() - clk;
+clk2 = Abc_Clock();
+p->timeRes2 += clk2 - clk1;
 
     // get the two level divisors
-clk = Abc_Clock();
     Abc_ManResubDivsD( p, Required );
-p->timeResD += Abc_Clock() - clk;
+clk = Abc_Clock();
+p->timeResD += clk - clk2;
 
     // consider two nodes
-clk = Abc_Clock();
     if ( (pGraph = Abc_ManResubDivs2( p, Required )) )
     {
 p->timeRes2 += Abc_Clock() - clk;
         p->nLastGain = p->nMffc - 2;
         return pGraph;
     }
-p->timeRes2 += Abc_Clock() - clk;
+clk1 = Abc_Clock();
+p->timeRes2 += clk1 - clk;
     if ( nSteps == 2 || p->nMffc == 3 )
         return NULL;
 
     // consider two nodes
-clk = Abc_Clock();
     if ( (pGraph = Abc_ManResubDivs3( p, Required )) )
     {
-p->timeRes3 += Abc_Clock() - clk;
+p->timeRes3 += Abc_Clock() - clk1;
         p->nLastGain = p->nMffc - 3;
         return pGraph;
     }
-p->timeRes3 += Abc_Clock() - clk;
+p->timeRes3 += Abc_Clock() - clk1;
     if ( nSteps == 3 || p->nLeavesMax == 4 )
         return NULL;
     return NULL;

@@ -1073,6 +1073,7 @@ float If_CutAverageRefs( If_Man_t * p, If_Cut_t * pCut )
   SeeAlso     []
  
 ***********************************************************************/
+int global_print = 0;
 float If_CutAreaDeref( If_Man_t * p, If_Cut_t * pCut )
 {
     If_Obj_t * pLeaf;
@@ -1106,11 +1107,14 @@ float If_CutAreaRef( If_Man_t * p, If_Cut_t * pCut )
     float Area;
     int i;
     Area = If_CutLutArea(p, pCut);
+if(global_print)    printf("init Area: %.2lf\n", Area);
     If_CutForEachLeaf( p, pCut, pLeaf, i )
     {
+if(global_print)    printf("meet pLeaf %d: %.2f, ref: %d\n", pLeaf->Id, Area, pLeaf->nRefs);
         assert( pLeaf->nRefs >= 0 );
         if ( pLeaf->nRefs++ > 0 || !If_ObjIsAnd(pLeaf) )
             continue;
+if(global_print)    printf("added pLeaf %d: %.2f, ref: %d\n", pLeaf->Id, Area, pLeaf->nRefs);
         Area += If_CutAreaRef( p, If_ObjCutBest(pLeaf) );
     }
     return Area;
@@ -1127,8 +1131,10 @@ float If_CutAreaRef( If_Man_t * p, If_Cut_t * pCut )
   SeeAlso     []
 
 ***********************************************************************/
-float If_CutAreaDerefed( If_Man_t * p, If_Cut_t * pCut )
+float If_CutAreaDerefed( If_Man_t * p, If_Cut_t * pCut, If_Obj_t * pRoot )
 {
+// if(pRoot->Id==18)   global_print = 1;
+if(pRoot->Id==43 && pCut->nLeaves==6 && pCut->pLeaves[3]==18 && pCut->pLeaves[4]==24 && pCut->pLeaves[5]==37)   global_print=1;
     float aResult, aResult2;
     if ( pCut->nLeaves < 2 )
         return 0;
@@ -1136,6 +1142,8 @@ float If_CutAreaDerefed( If_Man_t * p, If_Cut_t * pCut )
     aResult  = If_CutAreaDeref( p, pCut );
     assert( aResult > aResult2 - 3*p->fEpsilon );
     assert( aResult < aResult2 + 3*p->fEpsilon );
+if(global_print)    printf("result: %.2lf %.2lf, nLeaves: %d\n", aResult2, aResult, pCut->nLeaves);
+global_print = 0;
     return aResult;
 }
 
