@@ -61,3 +61,7 @@ tags
 
 /cmake
 /cscope
+
+logic_my_suite
+rebuild.sh
+abc_fixrs
