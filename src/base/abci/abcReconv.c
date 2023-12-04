@@ -282,6 +282,7 @@ Vec_Ptr_t * Abc_NodeFindCut( Abc_ManCut_t * p, Abc_Obj_t * pRoot, int fContain )
     // return if containing cut is not requested
     if ( !fContain )
     {
+        // default here
         // unmark both fMarkA and fMarkB in tbe TFI
         Abc_NodesUnmarkB( p->vVisited );
         return p->vNodeLeaves;

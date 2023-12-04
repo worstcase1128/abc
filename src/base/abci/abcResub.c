@@ -30,7 +30,7 @@ ABC_NAMESPACE_IMPL_START
 
 #define ABC_RS_DIV1_MAX    150   // the max number of divisors to consider
 #define ABC_RS_DIV2_MAX    500   // the max number of pair-wise divisors to consider
-
+#define OFFSET 26   // nPOs
 typedef struct Abc_ManRes_t_ Abc_ManRes_t;
 struct Abc_ManRes_t_
 {
@@ -146,7 +146,7 @@ int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutMax, int nStepsMax, int nMinS
     Dec_Graph_t * pFForm;
     Vec_Ptr_t * vLeaves;
     Abc_Obj_t * pNode;
-    abctime clk, clkStart = Abc_Clock();
+    abctime clk, clk1, clkStart = Abc_Clock();
     int i, nNodes;
 
 
@@ -177,8 +177,10 @@ pManRes->timePre = Abc_Clock() - clkStart;
     pManRes->nNodesBeg = Abc_NtkNodeNum(pNtk);
     nNodes = Abc_NtkObjNumMax(pNtk);
     pProgress = Extra_ProgressBarStart( stdout, nNodes );
+clk = Abc_Clock();
     Abc_NtkForEachNode( pNtk, pNode, i )
     {
+// printf("evaluating %d(%d)\n", pNode->Id, Abc_ObjFanoutNum(pNode));
         Extra_ProgressBarUpdate( pProgress, i, NULL );
         // skip the constant node
 //        if ( Abc_NodeIsConst(pNode) )
@@ -194,10 +196,10 @@ pManRes->timePre = Abc_Clock() - clkStart;
             break;
 
         // compute a reconvergence-driven cut
-clk = Abc_Clock();
         vLeaves = Abc_NodeFindCut( pManCut, pNode, 0 );
 //        vLeaves = Abc_CutFactorLarge( pNode, nCutMax );
-pManRes->timeCut += Abc_Clock() - clk;
+clk1 = Abc_Clock();
+pManRes->timeCut += clk1 - clk;
 /*
         if ( fVerbose && vLeaves )
         printf( "Node %6d : Leaves = %3d. Volume = %3d.\n", pNode->Id, Vec_PtrSize(vLeaves), Abc_CutVolumeCheck(pNode, vLeaves) );
@@ -210,15 +212,17 @@ pManRes->timeCut += Abc_Clock() - clk;
 clk = Abc_Clock();
             Abc_NtkDontCareClear( pManOdc );
             Abc_NtkDontCareCompute( pManOdc, pNode, vLeaves, pManRes->pCareSet );
-pManRes->timeTruth += Abc_Clock() - clk;
+clk1 = Abc_Clock();
+pManRes->timeTruth += clk1 - clk;
         }
 
         // evaluate this cut
-clk = Abc_Clock();
         pFForm = Abc_ManResubEval( pManRes, pNode, vLeaves, nStepsMax, fUpdateLevel, fVerbose );
 //        Vec_PtrFree( vLeaves );
 //        Abc_ManResubCleanup( pManRes );
-pManRes->timeRes += Abc_Clock() - clk;
+// pFForm = NULL;
+clk = Abc_Clock();
+pManRes->timeRes += clk - clk1;
         if ( pFForm == NULL )
             continue;
         if ( pManRes->nLastGain < nMinSaved )
@@ -401,10 +405,10 @@ void Abc_ManResubPrint( Abc_ManRes_t * p )
                                                    );                          
     printf( "Total leaves   = %8d.\n", p->nTotalLeaves );
     printf( "Total divisors = %8d.\n", p->nTotalDivs );
-//    printf( "Total gain     = %8d.\n", p->nTotalGain );
+   printf( "Total gain     = %8d.\n", p->nTotalGain );
     printf( "Gain           = %8d. (%6.2f %%).\n\n", p->nNodesBeg-p->nNodesEnd, 100.0*(p->nNodesBeg-p->nNodesEnd)/p->nNodesBeg );
 
-// ABC_PRT( "Other   ", p->timeOther );
+ABC_PRT( "Other   ", p->timeOther );
 ABC_PRT( "Pre     ", p->timePre );
 ABC_PRT( "Cuts    ", p->timeCut );
 ABC_PRT( "Resub   ", p->timeRes );
@@ -503,7 +507,10 @@ int Abc_ManResubCollectDivs( Abc_ManRes_t * p, Abc_Obj_t * pRoot, Vec_Ptr_t * vL
         // if the fanout has both fanins in the set, add it
         Abc_ObjForEachFanout( pNode, pFanout, k )
         {
-            if ( Abc_NodeIsTravIdCurrent(pFanout) || Abc_ObjIsCo(pFanout) || (int)pFanout->Level > Required )
+// if ( !Abc_NodeIsTravIdCurrent(pFanout) &&  !Abc_ObjIsCo(pFanout) && (int)pFanout->Level > Required && Abc_NodeIsTravIdCurrent(Abc_ObjFanin0(pFanout)) && Abc_NodeIsTravIdCurrent(Abc_ObjFanin1(pFanout)))
+// printf("    root %d l: %d, required: %d, fanout %d l: %d\n", pRoot->Id-OFFSET, (int)pRoot->Level, Required, pFanout->Id-OFFSET, (int)pFanout->Level);
+            if ( Abc_NodeIsTravIdCurrent(pFanout) || Abc_ObjIsCo(pFanout) || (int)pFanout->Level >= Required - 1 )
+            // if ( Abc_NodeIsTravIdCurrent(pFanout) || Abc_ObjIsCo(pFanout) || (int)pFanout->Level > Required )
                 continue;
             if ( Abc_NodeIsTravIdCurrent(Abc_ObjFanin0(pFanout)) && Abc_NodeIsTravIdCurrent(Abc_ObjFanin1(pFanout)) )
             {
@@ -631,6 +638,7 @@ void Abc_ManResubSimulate( Vec_Ptr_t * vDivs, int nLeaves, Vec_Ptr_t * vSims, in
     {
         puData = (unsigned *)pObj->pData;
         pObj->fPhase = (puData[0] & 1);
+        // printf("normalizing %d\n", pObj->Id);
         if ( pObj->fPhase )
             for ( k = 0; k < nWords; k++ )
                 puData[k] = ~puData[k];
@@ -651,6 +659,7 @@ void Abc_ManResubSimulate( Vec_Ptr_t * vDivs, int nLeaves, Vec_Ptr_t * vSims, in
 ***********************************************************************/
 Dec_Graph_t * Abc_ManResubQuit0( Abc_Obj_t * pRoot, Abc_Obj_t * pObj )
 {
+// printf("quit0 rootId %d = %d\n", pRoot->Id-OFFSET, Abc_ObjRegular(pObj)->Id-OFFSET);
     Dec_Graph_t * pGraph;
     Dec_Edge_t eRoot;
     pGraph = Dec_GraphCreate( 1 );
@@ -675,6 +684,7 @@ Dec_Graph_t * Abc_ManResubQuit0( Abc_Obj_t * pRoot, Abc_Obj_t * pObj )
 ***********************************************************************/
 Dec_Graph_t * Abc_ManResubQuit1( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t * pObj1, int fOrGate )
 {
+// printf("quit1 rootId %d = %d %d\n", pRoot->Id-OFFSET, Abc_ObjRegular(pObj0)->Id-OFFSET, Abc_ObjRegular(pObj1)->Id-OFFSET);
     Dec_Graph_t * pGraph;
     Dec_Edge_t eRoot, eNode0, eNode1;
     assert( Abc_ObjRegular(pObj0) != Abc_ObjRegular(pObj1) );
@@ -706,6 +716,9 @@ Dec_Graph_t * Abc_ManResubQuit1( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t
 ***********************************************************************/
 Dec_Graph_t * Abc_ManResubQuit21( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t * pObj1, Abc_Obj_t * pObj2, int fOrGate )
 {
+    
+// printf("rootId21 %d\n", pRoot->Id-26);
+// printf("quit21 rootId %d = %d %d %d\n", pRoot->Id-OFFSET, Abc_ObjRegular(pObj0)->Id-OFFSET, Abc_ObjRegular(pObj1)->Id-OFFSET,Abc_ObjRegular(pObj2)->Id-OFFSET);
     Dec_Graph_t * pGraph;
     Dec_Edge_t eRoot, eNode0, eNode1, eNode2;
     assert( Abc_ObjRegular(pObj0) != Abc_ObjRegular(pObj1) );
@@ -747,6 +760,7 @@ Dec_Graph_t * Abc_ManResubQuit21( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_
 ***********************************************************************/
 Dec_Graph_t * Abc_ManResubQuit2( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t * pObj1, Abc_Obj_t * pObj2, int fOrGate )
 {
+printf("quit2 rootId %d = %d %d %d\n", pRoot->Id-OFFSET, Abc_ObjRegular(pObj0)->Id-OFFSET, Abc_ObjRegular(pObj1)->Id-OFFSET,Abc_ObjRegular(pObj2)->Id-OFFSET);
     Dec_Graph_t * pGraph;
     Dec_Edge_t eRoot, ePrev, eNode0, eNode1, eNode2;
     assert( Abc_ObjRegular(pObj0) != Abc_ObjRegular(pObj1) );
@@ -757,18 +771,25 @@ Dec_Graph_t * Abc_ManResubQuit2( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t
     Dec_GraphNode( pGraph, 1 )->pFunc = Abc_ObjRegular(pObj1);
     Dec_GraphNode( pGraph, 2 )->pFunc = Abc_ObjRegular(pObj2);
     eNode0 = Dec_EdgeCreate( 0, Abc_ObjRegular(pObj0)->fPhase ^ Abc_ObjIsComplement(pObj0) );
-    if ( Abc_ObjIsComplement(pObj1) && Abc_ObjIsComplement(pObj2) )
-    {
-        eNode1 = Dec_EdgeCreate( 1, Abc_ObjRegular(pObj1)->fPhase );
-        eNode2 = Dec_EdgeCreate( 2, Abc_ObjRegular(pObj2)->fPhase );
-        ePrev  = Dec_GraphAddNodeOr( pGraph, eNode1, eNode2 );
-    }
-    else
-    {
-        eNode1 = Dec_EdgeCreate( 1, Abc_ObjRegular(pObj1)->fPhase ^ Abc_ObjIsComplement(pObj1) );
-        eNode2 = Dec_EdgeCreate( 2, Abc_ObjRegular(pObj2)->fPhase ^ Abc_ObjIsComplement(pObj2) );
+    // if ( Abc_ObjIsComplement(pObj1) && Abc_ObjIsComplement(pObj2) )
+    // {
+    //     eNode1 = Dec_EdgeCreate( 1, Abc_ObjRegular(pObj1)->fPhase );
+    //     eNode2 = Dec_EdgeCreate( 2, Abc_ObjRegular(pObj2)->fPhase );
+    //     ePrev  = Dec_GraphAddNodeOr( pGraph, eNode1, eNode2 );
+    // }
+    // else
+    // {
+    //     eNode1 = Dec_EdgeCreate( 1, Abc_ObjRegular(pObj1)->fPhase ^ Abc_ObjIsComplement(pObj1) );
+    //     eNode2 = Dec_EdgeCreate( 2, Abc_ObjRegular(pObj2)->fPhase ^ Abc_ObjIsComplement(pObj2) );
+    //     ePrev  = Dec_GraphAddNodeAnd( pGraph, eNode1, eNode2 );
+    // }
+    eNode1 = Dec_EdgeCreate( 1, Abc_ObjRegular(pObj1)->fPhase ^ Abc_ObjIsComplement(pObj1) );
+    eNode2 = Dec_EdgeCreate( 2, Abc_ObjRegular(pObj2)->fPhase ^ Abc_ObjIsComplement(pObj2) );
+    if(fOrGate)
         ePrev  = Dec_GraphAddNodeAnd( pGraph, eNode1, eNode2 );
-    }
+    else
+        ePrev  = Dec_GraphAddNodeOr( pGraph, eNode1, eNode2 );
+
     if ( fOrGate ) 
         eRoot  = Dec_GraphAddNodeOr( pGraph, eNode0, ePrev );
     else
@@ -947,6 +968,8 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
     Vec_PtrClear( p->vDivs2UN0 );
     Vec_PtrClear( p->vDivs2UN1 );
     puDataR = (unsigned *)p->pRoot->pData;
+int a=0, b=0, c=0, d=0;
+int e=0, f=0, g=0, h=0;
     Vec_PtrForEachEntry( Abc_Obj_t *, p->vDivs1B, pObj0, i )
     {
         if ( (int)pObj0->Level > Required - 2 )
@@ -969,6 +992,7 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
                         break;
                 if ( w == p->nWords )
                 {
+                    a++;
                     Vec_PtrPush( p->vDivs2UP0, pObj0 );
                     Vec_PtrPush( p->vDivs2UP1, pObj1 );
                 }
@@ -978,6 +1002,7 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
                         break;
                 if ( w == p->nWords )
                 {
+                    b++;
                     Vec_PtrPush( p->vDivs2UP0, Abc_ObjNot(pObj0) );
                     Vec_PtrPush( p->vDivs2UP1, pObj1 );
                 }
@@ -987,6 +1012,7 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
                         break;
                 if ( w == p->nWords )
                 {
+                    c++;
                     Vec_PtrPush( p->vDivs2UP0, pObj0 );
                     Vec_PtrPush( p->vDivs2UP1, Abc_ObjNot(pObj1) );
                 }
@@ -997,6 +1023,7 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
                         break;
                 if ( w == p->nWords )
                 {
+                    d++;
                     Vec_PtrPush( p->vDivs2UP0, Abc_ObjNot(pObj0) );
                     Vec_PtrPush( p->vDivs2UP1, Abc_ObjNot(pObj1) );
                 }
@@ -1007,43 +1034,48 @@ void Abc_ManResubDivsD( Abc_ManRes_t * p, int Required )
                 // get negative unate divisors
                 for ( w = 0; w < p->nWords; w++ )
 //                    if ( ~(puData0[w] & puData1[w]) & puDataR[w] )
-                    if ( ~(puData0[w] & puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
+                    if ( ~(puData0[w] | puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
                         break;
                 if ( w == p->nWords )
                 {
+                    e++;
                     Vec_PtrPush( p->vDivs2UN0, pObj0 );
                     Vec_PtrPush( p->vDivs2UN1, pObj1 );
                 }
                 for ( w = 0; w < p->nWords; w++ )
 //                    if ( ~(~puData0[w] & puData1[w]) & puDataR[w] )
-                    if ( ~(~puData0[w] & puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
+                    if ( ~(~puData0[w] | puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
                         break;
                 if ( w == p->nWords )
                 {
+                    f++;
                     Vec_PtrPush( p->vDivs2UN0, Abc_ObjNot(pObj0) );
                     Vec_PtrPush( p->vDivs2UN1, pObj1 );
                 }
                 for ( w = 0; w < p->nWords; w++ )
 //                    if ( ~(puData0[w] & ~puData1[w]) & puDataR[w] )
-                    if ( ~(puData0[w] & ~puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
+                    if ( ~(puData0[w] | ~puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
                         break;
                 if ( w == p->nWords )
                 {
+                    g++;
                     Vec_PtrPush( p->vDivs2UN0, pObj0 );
                     Vec_PtrPush( p->vDivs2UN1, Abc_ObjNot(pObj1) );
                 }
                 for ( w = 0; w < p->nWords; w++ )
 //                    if ( ~(puData0[w] | puData1[w]) & puDataR[w] )
-                    if ( ~(puData0[w] | puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
+                    if ( ~(~puData0[w] | ~puData1[w]) & puDataR[w] & p->pCareSet[w] ) // care set
                         break;
                 if ( w == p->nWords )
                 {
+                    h++;
                     Vec_PtrPush( p->vDivs2UN0, Abc_ObjNot(pObj0) );
                     Vec_PtrPush( p->vDivs2UN1, Abc_ObjNot(pObj1) );
                 }
             }
         }
     }
+// printf("rootId %3d, up2Size: %3d = %3d+%3d+%3d+%3d, un2Size: %3d = %3d+%3d+%3d+%3d\n", p->pRoot->Id-OFFSET, Vec_PtrSize(p->vDivs2UP0), a,b,c,d, Vec_PtrSize(p->vDivs2UN0), e,f,g,h);
 //    printf( "%d %d  ", Vec_PtrSize(p->vDivs2UP0), Vec_PtrSize(p->vDivs2UN0) );
 }
 
@@ -1084,8 +1116,12 @@ Dec_Graph_t * Abc_ManResubDivs0( Abc_ManRes_t * p )
 //            if ( puData[w] != puDataR[w] )
             if ( (puData[w] ^ puDataR[w]) & p->pCareSet[w] ) // care set
                 break;
-        if ( w == p->nWords )
+        if ( w == p->nWords ){
+            // minus the number of PO
+            // printf("0-resub %s%d <- %s%d, gain: %d\n", p->pRoot->fPhase?"!":" ", p->pRoot->Id-1, pObj->fPhase?"!":" ", pObj->Id-1, p->nMffc);
+            // return NULL;
             return Abc_ManResubQuit0( p->pRoot, pObj );
+        }
     }
     return NULL;
 }
@@ -1137,6 +1173,9 @@ Dec_Graph_t * Abc_ManResubDivs1( Abc_ManRes_t * p, int Required )
             if ( w == p->nWords )
             {
                 p->nUsedNode1Or++;
+                
+                // printf("1-resub %d = %d or %d, gain: %d\n", p->pRoot->Id, pObj0->Id, pObj1->Id, p->nMffc);
+                // return NULL;
                 return Abc_ManResubQuit1( p->pRoot, pObj0, pObj1, 1 );
             }
         }
@@ -1179,6 +1218,8 @@ Dec_Graph_t * Abc_ManResubDivs1( Abc_ManRes_t * p, int Required )
             if ( w == p->nWords )
             {
                 p->nUsedNode1And++;
+                // printf("1-resub and %d = %d and %d, gain: %d\n", p->pRoot->Id, pObj0->Id, pObj1->Id, p->nMffc);
+                // return NULL;
                 return Abc_ManResubQuit1( p->pRoot, pObj0, pObj1, 0 );
             }
         }
@@ -1412,6 +1453,7 @@ Dec_Graph_t * Abc_ManResubDivs2( Abc_ManRes_t * p, int Required )
     int i, k, w;
     puDataR = (unsigned *)p->pRoot->pData;
     // check positive unate divisors
+// printf("resub2 root %d UP1 %d UP2 %d\n", p->pRoot->Id-26, Vec_PtrSize(p->vDivs1UP), Vec_PtrSize(p->vDivs2UP0));
     Vec_PtrForEachEntry( Abc_Obj_t *, p->vDivs1UP, pObj0, i )
     {
         puData0 = (unsigned *)Abc_ObjRegular(pObj0)->pData;
@@ -1458,7 +1500,7 @@ Dec_Graph_t * Abc_ManResubDivs2( Abc_ManRes_t * p, int Required )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] | (puData1[w] | puData2[w])) != puDataR[w] )
-                        if ( ((puData0[w] | (puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((puData0[w] | (~puData1[w] & ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else if ( Abc_ObjIsComplement(pObj1) )
@@ -1490,6 +1532,8 @@ Dec_Graph_t * Abc_ManResubDivs2( Abc_ManRes_t * p, int Required )
             }
         }
     }
+
+// printf("resub2 root %d UN1 %d UN2 %d\n", p->pRoot->Id-26, Vec_PtrSize(p->vDivs1UN), Vec_PtrSize(p->vDivs2UN0));
     // check negative unate divisors
     Vec_PtrForEachEntry( Abc_Obj_t *, p->vDivs1UN, pObj0, i )
     {
@@ -1506,28 +1550,28 @@ Dec_Graph_t * Abc_ManResubDivs2( Abc_ManRes_t * p, int Required )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (puData1[w] | puData2[w])) != puDataR[w] )
-                        if ( ((~puData0[w] & (puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((~puData0[w] & (~puData1[w] | ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else if ( Abc_ObjIsComplement(pObj1) )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (~puData1[w] & puData2[w])) != puDataR[w] )
-                        if ( ((~puData0[w] & (~puData1[w] & puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((~puData0[w] & (~puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else if ( Abc_ObjIsComplement(pObj2) )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (puData1[w] & ~puData2[w])) != puDataR[w] )
-                        if ( ((~puData0[w] & (puData1[w] & ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((~puData0[w] & (puData1[w] | ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else 
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (puData1[w] & puData2[w])) != puDataR[w] )
-                        if ( ((~puData0[w] & (puData1[w] & puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((~puData0[w] & (puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
             }
@@ -1537,28 +1581,28 @@ Dec_Graph_t * Abc_ManResubDivs2( Abc_ManRes_t * p, int Required )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (puData1[w] | puData2[w])) != puDataR[w] )
-                        if ( ((puData0[w] & (puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((puData0[w] & (~puData1[w] | ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else if ( Abc_ObjIsComplement(pObj1) )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (~puData1[w] & puData2[w])) != puDataR[w] )
-                        if ( ((puData0[w] & (~puData1[w] & puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((puData0[w] & (~puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else if ( Abc_ObjIsComplement(pObj2) )
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (puData1[w] & ~puData2[w])) != puDataR[w] )
-                        if ( ((puData0[w] & (puData1[w] & ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((puData0[w] & (puData1[w] | ~puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
                 else 
                 {
                     for ( w = 0; w < p->nWords; w++ )
     //                    if ( (puData0[w] & (puData1[w] & puData2[w])) != puDataR[w] )
-                        if ( ((puData0[w] & (puData1[w] & puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
+                        if ( ((puData0[w] & (puData1[w] | puData2[w])) ^ puDataR[w]) & p->pCareSet[w] ) // care set
                             break;
                 }
             }
@@ -1863,14 +1907,16 @@ void Abc_ManResubCleanup( Abc_ManRes_t * p )
   SeeAlso     []
 
 ***********************************************************************/
+int max_MFFC = 0;
+int max_divisor = 0;
 Dec_Graph_t * Abc_ManResubEval( Abc_ManRes_t * p, Abc_Obj_t * pRoot, Vec_Ptr_t * vLeaves, int nSteps, int fUpdateLevel, int fVerbose )
 {
-    abctime clk, clk1, clk2, clk3, clk4;
+    abctime clk_start, clk, clk1, clk2;
     extern int Abc_NodeMffcInside( Abc_Obj_t * pNode, Vec_Ptr_t * vLeaves, Vec_Ptr_t * vInside );
     Dec_Graph_t * pGraph;
     int Required;
     Required = fUpdateLevel? Abc_ObjRequiredLevel(pRoot) : ABC_INFINITY;
-
+// printf("rootId %d, required: %d, level %d\n", pRoot->Id-OFFSET, Required, pRoot->pNtk->LevelMax);
     assert( nSteps >= 0 );
     assert( nSteps <= 3 );
     p->pRoot = pRoot;
@@ -1879,6 +1925,10 @@ Dec_Graph_t * Abc_ManResubEval( Abc_ManRes_t * p, Abc_Obj_t * pRoot, Vec_Ptr_t *
     // collect the MFFC
 clk = Abc_Clock();
     p->nMffc = Abc_NodeMffcInside( pRoot, vLeaves, p->vTemp );
+// if(p->nMffc>max_MFFC){
+//     max_MFFC = p->nMffc;
+//     printf("MFFC of root %d: %d\n", pRoot->Id-OFFSET, p->nMffc);
+// }
     assert( p->nMffc > 0 );
 clk1 = Abc_Clock();
 p->timeMffc += clk1 - clk;
@@ -1888,7 +1938,13 @@ p->timeMffc += clk1 - clk;
 p->timeDiv += Abc_Clock() - clk1;
         return NULL;
     }
+// printf("rootId %d, required: %d, level %d, div %d\n", pRoot->Id-OFFSET, Required, pRoot->pNtk->LevelMax, Vec_PtrSize( p->vDivs));
+// return NULL;
     p->nTotalDivs   += p->nDivs;
+// if(p->nDivs>max_divisor){
+//     max_divisor = p->nDivs;
+//     printf("divisor of root %d: %d\n", pRoot->Id-OFFSET, p->nDivs);
+// }
     p->nTotalLeaves += p->nLeaves;
 clk2 = Abc_Clock();
 p->timeDiv += clk2 - clk1;
@@ -1903,6 +1959,7 @@ p->timeSim += clk - clk2;
     {
         p->nUsedNodeC++;
         p->nLastGain = p->nMffc;
+// printf("resubConst gain %d, mffc %d\n", p->nLastGain, p->nMffc);
 p->timeRes1 += Abc_Clock() - clk;
         return pGraph;
     }
@@ -1912,6 +1969,7 @@ p->timeRes1 += Abc_Clock() - clk;
     {
         p->nUsedNode0++;
         p->nLastGain = p->nMffc;
+// printf("resub0 gain %d, mffc %d\n", p->nLastGain, p->nMffc);
 p->timeRes1 += Abc_Clock() - clk;
         return pGraph;
     }
@@ -1928,6 +1986,7 @@ p->timeRes1 += Abc_Clock() - clk;
     if ( (pGraph = Abc_ManResubDivs1( p, Required )) )
     {
         p->nLastGain = p->nMffc - 1;
+// printf("resub1 gain %d, mffc %d\n", p->nLastGain, p->nMffc);
 p->timeRes1 += Abc_Clock() - clk;
         return pGraph;
     }
@@ -1941,6 +2000,7 @@ p->timeRes1 += clk1 - clk;
     {
 p->timeRes2 += Abc_Clock() - clk1;
         p->nLastGain = p->nMffc - 2;
+// printf("resub21 gain %d, mffc %d\n", p->nLastGain, p->nMffc);
         return pGraph;
     }
 clk2 = Abc_Clock();
@@ -1956,6 +2016,7 @@ p->timeResD += clk - clk2;
     {
 p->timeRes2 += Abc_Clock() - clk;
         p->nLastGain = p->nMffc - 2;
+// printf("resub2 gain %d, mffc %d\n", p->nLastGain, p->nMffc);
         return pGraph;
     }
 clk1 = Abc_Clock();

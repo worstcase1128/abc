@@ -59,6 +59,7 @@ Abc_Obj_t * Dec_GraphToNetwork( Abc_Ntk_t * pNtk, Dec_Graph_t * pGraph )
     {
         pAnd0 = Abc_ObjNotCond( (Abc_Obj_t *)Dec_GraphNode(pGraph, pNode->eEdge0.Node)->pFunc, pNode->eEdge0.fCompl ); 
         pAnd1 = Abc_ObjNotCond( (Abc_Obj_t *)Dec_GraphNode(pGraph, pNode->eEdge1.Node)->pFunc, pNode->eEdge1.fCompl ); 
+// printf("added %d %d\n", pAnd0->Id, pAnd1->Id);
         pNode->pFunc = Abc_AigAnd( (Abc_Aig_t *)pNtk->pManFunc, pAnd0, pAnd1 );
     }
     // complement the result if necessary
@@ -246,6 +247,7 @@ int Dec_GraphUpdateNetwork( Abc_Obj_t * pRoot, Dec_Graph_t * pGraph, int fUpdate
     nNodesOld = Abc_NtkNodeNum(pNtk);
     // create the new structure of nodes
     pRootNew = Dec_GraphToNetwork( pNtk, pGraph );
+// printf("added root %d\n", pRootNew->Id);
     // remove the old nodes
     RetValue = Abc_AigReplace( (Abc_Aig_t *)pNtk->pManFunc, pRoot, pRootNew, fUpdateLevel );
     // compare the gains
