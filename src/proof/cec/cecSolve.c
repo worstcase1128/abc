@@ -188,6 +188,7 @@ void Cec_AddClausesMux( Cec_ManSat_t * p, Gia_Obj_t * pNode )
 ***********************************************************************/
 void Cec_AddClausesSuper( Cec_ManSat_t * p, Gia_Obj_t * pNode, Vec_Ptr_t * vSuper )
 {
+    lbool testing = false;
     Gia_Obj_t * pFanin;
     int * pLits, nLits, RetValue, i;
     assert( !Gia_IsComplement(pNode) );
@@ -210,6 +211,7 @@ void Cec_AddClausesSuper( Cec_ManSat_t * p, Gia_Obj_t * pNode, Vec_Ptr_t * vSupe
             if ( pNode->fPhase )                pLits[1] = lit_neg( pLits[1] );
         }
         RetValue = sat_solver_addclause( p->pSat, pLits, pLits + 2 );
+        if(testing)    printf("                adding clause %d %d\n", pLits[0], pLits[1]);
         assert( RetValue );
     }
     Vec_PtrForEachEntry( Gia_Obj_t *, vSuper, pFanin, i )
@@ -224,6 +226,12 @@ void Cec_AddClausesSuper( Cec_ManSat_t * p, Gia_Obj_t * pNode, Vec_Ptr_t * vSupe
     if ( p->pPars->fPolarFlip )
     {
         if ( pNode->fPhase )  pLits[nLits-1] = lit_neg( pLits[nLits-1] );
+    }
+    if(testing){
+        printf("                adding clause");
+        for(int i=0; i<nLits; i++)
+            printf(" %d", pLits[i]);
+        printf("\n");
     }
     // A & B => C   or   !A + !B + C
     // !A + !B + !C + D
@@ -250,6 +258,7 @@ void Cec_CollectSuper_rec( Gia_Obj_t * pObj, Vec_Ptr_t * vSuper, int fFirst, int
          (!fFirst && Gia_ObjValue(pObj) > 1) || 
          (fUseMuxes && Gia_ObjIsMuxType(pObj)) )
     {
+        // printf("                push %d into vSuper\n", Gia_ObjValue(pObj));
         Vec_PtrPushUnique( vSuper, pObj );
         return;
     }
@@ -298,8 +307,10 @@ void Cec_ObjAddToFrontier( Cec_ManSat_t * p, Gia_Obj_t * pObj, Vec_Ptr_t * vFron
         return;
     Vec_PtrPush( p->vUsedNodes, pObj );
     Cec_ObjSetSatNum( p, pObj, p->nSatVars++ );
-    if ( Gia_ObjIsAnd(pObj) )
+    if ( Gia_ObjIsAnd(pObj) ){
         Vec_PtrPush( vFrontier, pObj );
+        // printf("                adding to vFrontier pSatVars[%d] = %d\n", Gia_ObjId(p->pAig, pObj), Cec_ObjSatNum(p,pObj));
+    }
 }
 
 /**Function*************************************************************
@@ -342,7 +353,7 @@ void Cec_CnfNodeAddToSolver( Cec_ManSat_t * p, Gia_Obj_t * pObj )
     for ( i = 0; (i < Vec_PtrSize(vFrontier)) && (((pNode) = (Gia_Obj_t *)Vec_PtrEntry(vFrontier, i)), 1); i++ )
     {
         // printf("    frontier is and? %s\n", Gia_ObjIsAnd(pNode)?"yes":"no" ); // always yes
-        if(testing) printf("        pNodeId: %d\n", Gia_ObjId(p->pAig, pNode));
+        if(testing) printf("        vFrontier: %d\n", Gia_ObjId(p->pAig, pNode));
         // create the supergate
         assert( Cec_ObjSatNum(p,pNode) );
         int sub_before_clauses = p->pSat->stats.clauses;
@@ -363,8 +374,11 @@ void Cec_CnfNodeAddToSolver( Cec_ManSat_t * p, Gia_Obj_t * pObj )
         else
         {
             Cec_CollectSuper( pNode, fUseMuxes, p->vFanins );
-            Vec_PtrForEachEntry( Gia_Obj_t *, p->vFanins, pFanin, k )
+            if(testing) printf("            vFanins size %d\n", Vec_PtrSize(p->vFanins));
+            Vec_PtrForEachEntry( Gia_Obj_t *, p->vFanins, pFanin, k ){
                 Cec_ObjAddToFrontier( p, Gia_Regular(pFanin), vFrontier );
+                // printf("                %d\n", Gia_ObjId(p->pAig, pFanin));
+            }
             Cec_AddClausesSuper( p, pNode, p->vFanins );
             if(testing) printf("            add2 cl: %d -> %d lit: %ld -> %ld \n",   sub_before_clauses, p->pSat->stats.clauses, sub_before_lits, p->pSat->stats.clauses_literals);
         }
@@ -412,6 +426,7 @@ void Cec_ManSatSolverRecycle( Cec_ManSat_t * p )
 //        Lit = lit_neg( Lit );
     sat_solver_addclause( p->pSat, &Lit, &Lit + 1 );
     Cec_ObjSetSatNum( p, Gia_ManConst0(p->pAig), p->nSatVars++ );
+    printf("after recycle %d\n", p->nSatVars);
 
     p->nRecycles++;
     p->nCallsSince = 0;
@@ -496,10 +511,10 @@ int Cec_SetActivityFactors( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 // return 1 for UNSAT, 0 for SAT, -1 for UNDET
 int Cec_ManSatCheckNode( Cec_ManSat_t * p, Gia_Obj_t * pObj )
 {
+    lbool testing = true;
     // for testing **
-    // Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatCheckNode()\n" );
+    if(testing) Abc_Print( 1, "Enter cecSolve.c/Cec_ManSatCheckNode()\n" );
     // printf("    >>> sat_solver_addclause %.1f %.1f \n",   (double)p->pSat->stats.clauses, (double)p->pSat->stats.clauses_literals);
-    lbool testing = false;
     // printf("call Cec_ManSatCheckNode at %p\n", p);
 
     Gia_Obj_t * pObjR = Gia_Regular(pObj);
@@ -743,7 +758,7 @@ Abc_Cex_t * Cex_ManGenCex( Cec_ManSat_t * p, int iOut )
 }
 void Cec_ManSatSolve( Cec_ManPat_t * pPat, Gia_Man_t * pAig, Cec_ParSat_t * pPars, Vec_Int_t * vIdsOrig, Vec_Int_t * vMiterPairs, Vec_Int_t * vEquivPairs, int f0Proved )
 {
-    lbool testing = false;
+    lbool testing = true;
     Bar_Progress_t * pProgress = NULL;
     Cec_ManSat_t * p;
     Gia_Obj_t * pObj;

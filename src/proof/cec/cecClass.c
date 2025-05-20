@@ -867,7 +867,7 @@ void Cec_ManSimCreateInfo( Cec_ManSim_t * p, Vec_Ptr_t * vInfoCis, Vec_Ptr_t * v
 ***********************************************************************/
 int Cec_ManSimClassesPrepare( Cec_ManSim_t * p, int LevelMax )
 {
-    // printf("in entering Cec_ManSimClassesPrepare\n");
+    printf("in entering Cec_ManSimClassesPrepare\n");
     // Gia_ManEquivPrintClasses( p->pAig, 0, Cec_MemUsage(p) );
     Gia_Obj_t * pObj;
     int i;
@@ -945,7 +945,7 @@ int Cec_ManSimClassesPrepare( Cec_ManSim_t * p, int LevelMax )
 ***********************************************************************/
 int Cec_ManSimClassesRefine( Cec_ManSim_t * p )
 {    
-    // printf("in entering Cec_ManSimClassesRefine\n");
+    printf("in entering Cec_ManSimClassesRefine\n");
     int i;
     Gia_ManCreateValueRefs( p->pAig );
     p->nWords = p->pPars->nWords;

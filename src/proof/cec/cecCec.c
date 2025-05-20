@@ -72,8 +72,12 @@ int Cec_ManVerifyOld( Gia_Man_t * pMiter, int fVerbose, int * piOutFail, abctime
 {
 //    extern int Fra_FraigCec( Aig_Man_t ** ppAig, int nConfLimit, int fVerbose );
     extern int Ssw_SecCexResimulate( Aig_Man_t * p, int * pModel, int * pnOutputs );
+printf("11 co %d, ci %d\n", Gia_ManCoNum(pMiter), Gia_ManCiNum(pMiter));
+    // connect adjacent po with xor below
     Gia_Man_t * pTemp = Gia_ManTransformMiter( pMiter );
+printf("22 co %d, ci %d\n", Gia_ManCoNum(pTemp), Gia_ManCiNum(pTemp));
     Aig_Man_t * pMiterCec = Gia_ManToAig( pTemp, 0 );
+printf("33 co %d, ci %d\n", Aig_ManCoNum(pMiterCec), Aig_ManCiNum(pMiterCec));
     int RetValue, iOut, nOuts;
     if ( piOutFail )
         *piOutFail = -1;
@@ -331,6 +335,8 @@ int Cec_ManVerify( Gia_Man_t * pInit, Cec_ParCec_t * pPars )
     int RetValue;
     abctime clk = Abc_Clock();
     abctime clkTotal = Abc_Clock();
+// printf("goto guagua\n");
+// goto guagua;
     // consider special cases:
     // 1) (SAT) a pair of POs have different value under all-0 pattern
     // 2) (SAT) a pair of POs has different PI/Const drivers
@@ -410,6 +416,9 @@ int Cec_ManVerify( Gia_Man_t * pInit, Cec_ParCec_t * pPars )
     if ( pPars->fVerbose )
         Abc_Print( 1, "Calling the old CEC engine.\n" );
     fflush( stdout );
+// guagua:
+// printf("i am here in guagua\n");
+// pNew = pInit;
     RetValue = Cec_ManVerifyOld( pNew, pPars->fVerbose, &pPars->iOutFail, clkTotal, pPars->fSilent );
     p->pCexComb = pNew->pCexComb; pNew->pCexComb = NULL;
     if ( p->pCexComb && !Gia_ManVerifyCex( p, p->pCexComb, 1 ) )

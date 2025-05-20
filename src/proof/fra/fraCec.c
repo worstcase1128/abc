@@ -164,6 +164,7 @@ int Fra_FraigSat( Aig_Man_t * pMan, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimi
     }
     else
     {
+printf("solving sat in Fra_FraigSat\n");
         sat_solver * pSat;
         Cnf_Dat_t * pCnf;
         int status, RetValue = 0;
@@ -174,6 +175,7 @@ int Fra_FraigSat( Aig_Man_t * pMan, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimi
         pMan->pData = NULL;
 
         // derive CNF
+printf("co %d, ci %d\n", Aig_ManCoNum(pMan), Aig_ManCiNum(pMan));
         pCnf = Cnf_Derive( pMan, Aig_ManCoNum(pMan) );
     //    pCnf = Cnf_DeriveSimple( pMan, Aig_ManCoNum(pMan) );
 
@@ -215,11 +217,13 @@ int Fra_FraigSat( Aig_Man_t * pMan, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimi
         }
         else
         {
+            printf("add the OR clause for the outputs\n");
             // add the OR clause for the outputs
             if ( !Cnf_DataWriteOrClause( pSat, pCnf ) )
             {
                 sat_solver_delete( pSat );
                 Cnf_DataFree( pCnf );
+    //        printf( "The problem is UNSATISFIABLE after simplification.\n" );
                 return 1;
             }
         }
@@ -227,13 +231,15 @@ int Fra_FraigSat( Aig_Man_t * pMan, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimi
         Cnf_DataFree( pCnf );
 
 
-    //    printf( "Created SAT problem with %d variable and %d clauses. ", sat_solver_nvars(pSat), sat_solver_nclauses(pSat) );
+       printf( "Created SAT problem with %d variable and %d clauses. ", sat_solver_nvars(pSat), sat_solver_nclauses(pSat) );
     //    ABC_PRT( "Time", Abc_Clock() - clk );
 
         // simplify the problem
         clk = Abc_Clock();
+// printf("    before simplify #cl: %d #lit: %ld \n",   pSat->stats.clauses, pSat->stats.clauses_literals);
         status = sat_solver_simplify(pSat);
-    //    printf( "Simplified the problem to %d variables and %d clauses. ", sat_solver_nvars(pSat), sat_solver_nclauses(pSat) );
+       printf( "Simplified the problem to %d variables and %d clauses. ", sat_solver_nvars(pSat), sat_solver_nclauses(pSat) );
+    //        printf( "The problem is UNSATISFIABLE after simplification.\n" );
     //    ABC_PRT( "Time", Abc_Clock() - clk );
         if ( status == 0 )
         {
@@ -247,20 +253,21 @@ int Fra_FraigSat( Aig_Man_t * pMan, ABC_INT64_T nConfLimit, ABC_INT64_T nInsLimi
         clk = Abc_Clock();
 //        if ( fVerbose )
 //            pSat->verbosity = 1;
+// printf("    before solving #cl: %d #lit: %ld \n",   pSat->stats.clauses, pSat->stats.clauses_literals);
         status = sat_solver_solve( pSat, NULL, NULL, (ABC_INT64_T)nConfLimit, (ABC_INT64_T)nInsLimit, (ABC_INT64_T)0, (ABC_INT64_T)0 );
         if ( status == l_Undef )
         {
-    //        printf( "The problem timed out.\n" );
+           printf( "The problem timed out.\n" );
             RetValue = -1;
         }
         else if ( status == l_True )
         {
-    //        printf( "The problem is SATISFIABLE.\n" );
+           printf( "The problem is SATISFIABLE.\n" );
             RetValue = 0;
         }
         else if ( status == l_False )
         {
-    //        printf( "The problem is UNSATISFIABLE.\n" );
+           printf( "The problem is UNSATISFIABLE.\n" );
             RetValue = 1;
         }
         else

@@ -783,6 +783,7 @@ static inline int Cbs_ManPropagateOne( Cbs_Man_t * p, Gia_Obj_t * pVar, int Leve
             Cbs_ManAssign( p, Gia_Not(Gia_ObjChild1(pVar)), Level, pVar, Gia_ObjFanin0(pVar) );
         return 0;
     }
+    // pVar=0 and both unassigned
     assert( Cbs_VarIsJust(pVar) );
     assert( !Cbs_QueHasNode( &p->pJust, pVar ) );
     Cbs_QuePush( &p->pJust, pVar );
@@ -849,7 +850,7 @@ int Cbs_ManPropagate( Cbs_Man_t * p, int Level )
         k = p->pJust.iHead;
         Cbs_QueForEachEntry( p->pJust, pVar, i )
         {
-            if ( Cbs_VarIsJust( pVar ) )
+            if ( Cbs_VarIsJust( pVar ) )    // pVar is assigned and both its fanins unassigned
                 p->pJust.pData[k++] = pVar;
             else if ( (hClause = Cbs_ManPropagateTwo( p, pVar, Level )) )
                 return hClause;
@@ -893,7 +894,7 @@ int Cbs_ManSolve_rec( Cbs_Man_t * p, int Level )
     // remember the state before branching
     iPropHead = p->pProp.iHead;
     Cbs_QueStore( &p->pJust, &iJustHead, &iJustTail );
-    // find the decision variable
+    // find the decision variable from pJust
     if ( p->Pars.fUseHighest )
         pVar = Cbs_ManDecideHighest( p );
     else if ( p->Pars.fUseLowest )

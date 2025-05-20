@@ -1739,6 +1739,8 @@ int Cec4_ManPerformSweeping( Gia_Man_t * p, Cec_ParFra_t * pPars, Gia_Man_t ** p
     if ( pPars->fVerbose )
         printf( "Solver type = %d. Simulate %d words in %d rounds. SAT with %d confs. Recycle after %d SAT calls.\n", 
             pPars->jType, pPars->nWords, pPars->nRounds, pPars->nBTLimit, pPars->nCallsRecycle );
+    if(pPars->fVerbose)
+        printf("fCheckMiter: %d, fDualOuts: %d\n", pPars->fCheckMiter, pPars->fDualOut);
 
     // this is currently needed to have a correct mapping
     Gia_ManForEachCi( p, pObj, i )

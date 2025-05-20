@@ -355,6 +355,7 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
     // for testing **
     if ( pPars->fVerbose )
         Abc_Print( 1, "Enter cecCore.c/Cec_ManSatSweeping()\n" );
+Gia_ManPrintStats( pAig, NULL );
     int64_t real_time1 = getCurrentTime();
     // printf("real time entering Cec_ManSatSweeping %ld\n", real_time1);
 
@@ -367,12 +368,15 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
     Cec_ManPat_t * pPat;
     int i, fTimeOut = 0, nMatches = 0;
     abctime clk, clk2, clkTotal = Abc_Clock();
+// pPars->nRounds = 0;
+// pPars->nWords = 1;
     if ( pPars->fVerbose )
         printf( "Simulating %d words for %d rounds. SAT solving with %d conflicts.\n", pPars->nWords, pPars->nRounds, pPars->nBTLimit );
 
     // duplicate AIG and transfer equivalence classes
     Gia_ManRandom( 1 );
     pIni = Gia_ManDup(pAig);
+Gia_ManPrintStats( pIni, NULL );
     pIni->pReprs = pAig->pReprs; pAig->pReprs = NULL;
     pIni->pNexts = pAig->pNexts; pAig->pNexts = NULL;
     if ( pPars->fUseOrigIds )
@@ -391,6 +395,7 @@ Gia_Man_t * Cec_ManSatSweeping( Gia_Man_t * pAig, Cec_ParFra_t * pPars, int fSil
     // SAT sweeping
     // p: Cec_ManFra_t, create an AIG
     // pAig is the original AIG, p->pAig is the reduced one
+Gia_ManPrintStats( pIni, NULL );
     p = Cec_ManFraStart( pIni, pPars );
     if ( pPars->fDualOut )
         pPars->fColorDiff = 1;
