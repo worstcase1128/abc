@@ -958,13 +958,32 @@ void Abc_NtkDontCareTruthOne( Odc_Man_t * p, Odc_Lit_t Lit )
   SeeAlso     []
 
 ***********************************************************************/
+
+void printArrayBinary(const unsigned *array, int nWords){
+    printf("\nprint puTruth\n");
+    for (int w = 0; w < nWords; w++){
+        unsigned word = array[w];
+        // Print bits from MSB (31) to LSB (0)
+        for (int bit = 31; bit >= 0; bit--){
+            unsigned bitVal = (word >> bit) & 1U;
+            printf("%u", bitVal);
+        }
+        printf(" "); // space between words
+    }
+    printf("\n");
+}
+
 void Abc_NtkDontCareSimulate_rec( Odc_Man_t * p, Odc_Lit_t Lit )
 {
     Odc_Obj_t * pObj;
     assert( !Odc_IsComplement(Lit) );
     // skip terminals
-    if ( Odc_IsTerm(p, Lit) )
+    if ( Odc_IsTerm(p, Lit) ){
+        // printf("!!! %d\n", (int)(Lit>>1));
+        // unsigned* gua  = Odc_ObjTruth( p, Lit );
+        // printArrayBinary(gua, p->nWords);
         return;
+    }
     // skip visited objects
     pObj = Odc_Lit2Obj( p, Lit );
     if ( Odc_ObjIsTravIdCurrent(p, pObj) )
@@ -995,6 +1014,7 @@ int Abc_NtkDontCareSimulate( Odc_Man_t * p, unsigned * puTruth )
     Abc_InfoCopy( puTruth, Odc_ObjTruth(p, Odc_Regular(p->iRoot)), p->nWords );
     if ( Odc_IsComplement(p->iRoot) )
         Abc_InfoNot( puTruth, p->nWords );
+    // printArrayBinary(puTruth, p->nWords);
     return Extra_TruthCountOnes( puTruth, p->nVarsMax );
 }
 
@@ -1074,45 +1094,54 @@ p->timeAbort += Abc_Clock() - clkTotal;
         printf( " |  " );
     }
 
+    if ( Vec_PtrSize(p->vBranches)  )
+    {
+        if ( p->fVeryVerbose )
+            printf( "=== Has Branches! ===\n" );
+        Abc_InfoFill( puTruth, p->nWords );
+        // p->nQuantsOver++;
+        return 0;
+    }
+
     // transfer the window into the AIG package
 clk = Abc_Clock();
     Abc_NtkDontCareTransfer( p );
 p->timeMiter += Abc_Clock() - clk;
 
     // simulate to estimate the amount of don't-cares
-clk = Abc_Clock();
-    nMints = Abc_NtkDontCareSimulateBefore( p, puTruth );
-p->timeSim += Abc_Clock() - clk;
-    if ( p->fVeryVerbose )
-    {
-        printf( "AIG = %5d ", Odc_NodeNum(p) );
-        printf( "%6.2f %%  ", 100.0 * (p->nBits - nMints) / p->nBits );
-    }
+// clk = Abc_Clock();
+//     nMints = Abc_NtkDontCareSimulateBefore( p, puTruth );
+// p->timeSim += Abc_Clock() - clk;
+//     if ( p->fVeryVerbose )
+//     {
+//         printf( "AIG = %5d ", Odc_NodeNum(p) );
+//         printf( "%6.2f %%  ", 100.0 * (p->nBits - nMints) / p->nBits );
+//     }
 
     // if there is less then the given percentage of don't-cares, skip
-    if ( 100.0 * (p->nBits - nMints) / p->nBits < 1.0 * p->nPercCutoff )
-    {
-p->timeAbort += Abc_Clock() - clkTotal;
-        if ( p->fVeryVerbose )
-            printf( "Simulation cutoff.\n" );
-        Abc_InfoFill( puTruth, p->nWords );
-        p->nSimsEmpty++;
-        return 0;
-    }
+//     if ( 100.0 * (p->nBits - nMints) / p->nBits < 1.0 * p->nPercCutoff )
+//     {
+// p->timeAbort += Abc_Clock() - clkTotal;
+//         if ( p->fVeryVerbose )
+//             printf( "Simulation cutoff.\n" );
+//         Abc_InfoFill( puTruth, p->nWords );
+//         p->nSimsEmpty++;
+//         return 0;
+//     }
 
     // quantify external variables
-clk = Abc_Clock();
-    RetValue = Abc_NtkDontCareQuantify( p );
-p->timeQuant += Abc_Clock() - clk;
-    if ( !RetValue )
-    {
-p->timeAbort += Abc_Clock() - clkTotal;
-        if ( p->fVeryVerbose )
-            printf( "=== Overflow! ===\n" );
-        Abc_InfoFill( puTruth, p->nWords );
-        p->nQuantsOver++;
-        return 0;
-    }
+// clk = Abc_Clock();
+//     RetValue = Abc_NtkDontCareQuantify( p );
+// p->timeQuant += Abc_Clock() - clk;
+//     if ( !RetValue )
+//     {
+// p->timeAbort += Abc_Clock() - clkTotal;
+//         if ( p->fVeryVerbose )
+//             printf( "=== Overflow! ===\n" );
+//         Abc_InfoFill( puTruth, p->nWords );
+//         p->nQuantsOver++;
+//         return 0;
+//     }
 
     // get the truth table
 clk = Abc_Clock();
@@ -1123,11 +1152,13 @@ p->timeTruth += Abc_Clock() - clk;
     {
         printf( "AIG = %5d ", Odc_NodeNum(p) );
         printf( "%6.2f %%  ", 100.0 * (p->nBits - nMints) / p->nBits );
+        printf( "(%3d/%3d)  ", p->nBits - nMints, p->nBits );
         printf( "\n" );
     }
 p->timeTotal += Abc_Clock() - clkTotal;
     p->nWinsFinish++;
     p->nTotalDcs += (int)(100.0 * (p->nBits - nMints) / p->nBits);
+    printArrayBinary(puTruth, p->nWords);
     return nMints;
 }
 
