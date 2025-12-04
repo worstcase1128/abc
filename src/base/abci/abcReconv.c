@@ -253,6 +253,11 @@ static inline int Abc_NodeGetLeafCostTwo( Abc_Obj_t * pNode, int nFaninLimit,
   SeeAlso     []
 
 ***********************************************************************/
+int nodeId(Abc_Obj_t* pNode){
+    if(Abc_ObjIsCi(pNode))  return pNode->Id;
+    else return pNode->Id - Abc_NtkPoNum(pNode->pNtk);
+}
+
 Vec_Ptr_t * Abc_NodeFindCut( Abc_ManCut_t * p, Abc_Obj_t * pRoot, int fContain )
 {
     Abc_Obj_t * pNode;
@@ -278,6 +283,42 @@ Vec_Ptr_t * Abc_NodeFindCut( Abc_ManCut_t * p, Abc_Obj_t * pRoot, int fContain )
     // compute the cut
     while ( Abc_NodeBuildCutLevelOne_int( p->vVisited, p->vNodeLeaves, p->nNodeSizeMax, p->nNodeFanStop ) );
     assert( Vec_PtrSize(p->vNodeLeaves) <= p->nNodeSizeMax );
+
+    if(fContain == 2){
+        // try to expand cut
+        int cutSize = Vec_PtrSize(p->vNodeLeaves);
+        int bestCutSize = cutSize;
+        // check if the cut is all PI
+        Vec_PtrForEachEntry( Abc_Obj_t *, p->vNodeLeaves, pNode, i )
+        {
+            if(! Abc_ObjIsCi(pNode))    break;
+        }
+        if(i==cutSize){
+            // printf("%d: %d all PI\n", nodeId(pRoot), Vec_PtrSize(p->vNodeLeaves));
+            // Vec_PtrForEachEntry( Abc_Obj_t *, p->vNodeLeaves, pNode, i )
+            //         printf(" %d", nodeId(pNode) );
+            // printf("\n"); 
+            Abc_NodesUnmarkB( p->vVisited );
+            return p->vNodeLeaves;
+        }
+
+        Vec_Ptr_t *      vExtNodeLeaves = Vec_PtrAlloc(20);  
+        Vec_PtrCopy(vExtNodeLeaves, p->vNodeLeaves);
+        while( Abc_NodeBuildCutLevelOne_int( p->vVisited, vExtNodeLeaves, p->nNodeSizeMax+8, p->nNodeFanStop ) ){
+            if( Vec_PtrSize(vExtNodeLeaves) <= bestCutSize ){
+                bestCutSize = Vec_PtrSize(vExtNodeLeaves);
+                // ......
+                Vec_PtrCopy(p->vNodeLeaves, vExtNodeLeaves);
+                // printf("cutSize %d -> %d\n", cutSize, Vec_PtrSize(vExtNodeLeaves));  
+                // Vec_PtrForEachEntry( Abc_Obj_t *, vExtNodeLeaves, pNode, i )
+                //     printf(" %d", nodeId(pNode));
+                // printf("\n");
+            }
+        }
+        Vec_PtrClear( vExtNodeLeaves );
+        Abc_NodesUnmarkB( p->vVisited );
+        return p->vNodeLeaves; 
+    }
 
     // return if containing cut is not requested
     if ( !fContain )

@@ -170,6 +170,11 @@ int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutMax, int nStepsMax, int nMinS
     pManRes->nNodesBeg = Abc_NtkNodeNum(pNtk);
     nNodes = Abc_NtkObjNumMax(pNtk);
     pProgress = Extra_ProgressBarStart( stdout, nNodes );
+    // Abc_NtkForEachNode( pNtk, pNode, i )
+    // {
+    //     // printf("%d: %d %d\n", pNode->Id - Abc_NtkPoNum(pNode->pNtk), Abc_ObjFanin0(pNode)->Id  - Abc_NtkPoNum(pNode->pNtk), Abc_ObjFanin1(pNode)->Id - Abc_NtkPoNum(pNode->pNtk));
+    //     printf("%d: %d %d\n", nodeId(pNode ), nodeId( Abc_ObjFanin0(pNode) ), nodeId (Abc_ObjFanin1(pNode) ));
+    // }
     Abc_NtkForEachNode( pNtk, pNode, i )
     {
         Extra_ProgressBarUpdate( pProgress, i, NULL );
@@ -188,6 +193,7 @@ int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutMax, int nStepsMax, int nMinS
 
         // compute a reconvergence-driven cut
 clk = Abc_Clock();
+        // 0 for default; 2 for expand cut
         vLeaves = Abc_NodeFindCut( pManCut, pNode, 0 );
 //        vLeaves = Abc_CutFactorLarge( pNode, nCutMax );
 pManRes->timeCut += Abc_Clock() - clk;
@@ -651,6 +657,13 @@ Dec_Graph_t * Abc_ManResubQuit0( Abc_Obj_t * pRoot, Abc_Obj_t * pObj )
   SeeAlso     []
 
 ***********************************************************************/
+int nodeIdGua(Abc_Obj_t* pNode){
+    int neg =Abc_ObjIsComplement(pNode) ? -1 : 1;;
+    pNode = Abc_ObjRegular(pNode);
+    if(Abc_ObjIsCi(pNode))  return pNode->Id * neg;
+    else return neg * (pNode->Id - Abc_NtkPoNum(pNode->pNtk));
+}
+
 Dec_Graph_t * Abc_ManResubQuit1( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t * pObj1, int fOrGate )
 {
     Dec_Graph_t * pGraph;
@@ -668,6 +681,8 @@ Dec_Graph_t * Abc_ManResubQuit1( Abc_Obj_t * pRoot, Abc_Obj_t * pObj0, Abc_Obj_t
     Dec_GraphSetRoot( pGraph, eRoot );
     if ( pRoot->fPhase )
         Dec_GraphComplement( pGraph );
+    // printf("%d <- %d %s %d\n", 
+    //     nodeIdGua(pRoot), nodeIdGua(pObj0), fOrGate ? "or" : "and", nodeIdGua(pObj1));
     return pGraph;
 }
 

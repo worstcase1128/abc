@@ -7929,6 +7929,7 @@ int Abc_CommandResubstitute( Abc_Frame_t * pAbc, int argc, char ** argv )
     int fUseZeros;
     int fVerbose;
     int fVeryVerbose;
+    int fUntilConv;
     extern int Abc_NtkResubstitute( Abc_Ntk_t * pNtk, int nCutsMax, int nNodesMax, int nMinSaved, int nLevelsOdc, int fUpdateLevel, int fVerbose, int fVeryVerbose );
 
     // set defaults
@@ -7940,8 +7941,9 @@ int Abc_CommandResubstitute( Abc_Frame_t * pAbc, int argc, char ** argv )
     fUseZeros    =  0;
     fVerbose     =  0;
     fVeryVerbose =  0;
+    fUntilConv = 0;
     Extra_UtilGetoptReset();
-    while ( ( c = Extra_UtilGetopt( argc, argv, "KNMFlzvwh" ) ) != EOF )
+    while ( ( c = Extra_UtilGetopt( argc, argv, "KNMFlzvwch" ) ) != EOF )
     {
         switch ( c )
         {
@@ -8001,6 +8003,9 @@ int Abc_CommandResubstitute( Abc_Frame_t * pAbc, int argc, char ** argv )
         case 'w':
             fVeryVerbose ^= 1;
             break;
+        case 'c':
+            fUntilConv ^= 1;
+            break;
         case 'h':
             goto usage;
         default:
@@ -8039,15 +8044,27 @@ int Abc_CommandResubstitute( Abc_Frame_t * pAbc, int argc, char ** argv )
     }
 
     // modify the current network
-    if ( !Abc_NtkResubstitute( pNtk, nCutsMax, nNodesMax, nMinSaved, nLevelsOdc, fUpdateLevel, fVerbose, fVeryVerbose ) )
-    {
-        Abc_Print( -1, "Refactoring has failed.\n" );
-        return 1;
-    }
+    // if ( !Abc_NtkResubstitute( pNtk, nCutsMax, nNodesMax, nMinSaved, nLevelsOdc, fUpdateLevel, fVerbose, fVeryVerbose ) )
+    // {
+    //     Abc_Print( -1, "Refactoring has failed.\n" );
+    //     return 1;
+    // }
+    // printf("after resub %d %d\n", Abc_NtkNodeNum(pNtk), Abc_AigLevel(pNtk));
+    
+    int area_prev, lev_prev, area_new, lev_new, round=0;
+    do{
+        area_prev = Abc_NtkNodeNum(pNtk);
+        lev_prev = Abc_AigLevel(pNtk); 
+        Abc_NtkResubstitute( pNtk, nCutsMax, nNodesMax, nMinSaved, nLevelsOdc, fUpdateLevel, fVerbose, fVeryVerbose );
+        area_new = Abc_NtkNodeNum(pNtk);
+        lev_new = Abc_AigLevel(pNtk); 
+        printf("after %d round, area %d, level %d\n", ++round, area_new, lev_new);
+    }while(fUntilConv && (area_prev!=area_new || lev_prev!=lev_new));
+
     return 0;
 
 usage:
-    Abc_Print( -2, "usage: resub [-KNMF <num>] [-lzvwh]\n" );
+    Abc_Print( -2, "usage: resub [-KNMF <num>] [-lzvwch]\n" );
     Abc_Print( -2, "\t           performs technology-independent restructuring of the AIG\n" );
     Abc_Print( -2, "\t-K <num> : the max cut size (%d <= num <= %d) [default = %d]\n", RS_CUT_MIN, RS_CUT_MAX, nCutsMax );
     Abc_Print( -2, "\t-N <num> : the max number of nodes to add (0 <= num <= 3) [default = %d]\n", nNodesMax );
@@ -8057,6 +8074,7 @@ usage:
     Abc_Print( -2, "\t-z       : toggle using zero-cost replacements [default = %s]\n", fUseZeros? "yes": "no" );
     Abc_Print( -2, "\t-v       : toggle verbose printout [default = %s]\n", fVerbose? "yes": "no" );
     Abc_Print( -2, "\t-w       : toggle verbose printout of ODC computation [default = %s]\n", fVeryVerbose? "yes": "no" );
+    Abc_Print( -2, "\t-c       : toggle run until convergence [default = %s]\n", fUntilConv? "yes": "no" );
     Abc_Print( -2, "\t-h       : print the command usage\n");
     return 1;
 }
